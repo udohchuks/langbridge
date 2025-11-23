@@ -12,7 +12,7 @@ export default function ImageTestPage() {
         const testPrompt = "A futuristic cityscape with flying cars and neon signs.";
         generateImage(testPrompt)
             .then(setImageUrl)
-            .catch(err => {
+            .catch((err: any) => {
                 console.error(err);
                 setError(err.message);
             });

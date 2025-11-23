@@ -1,13 +1,14 @@
+"use client";
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Sparkles } from "lucide-react";
 import { saveLessons, LessonData } from "@/lib/lessonStorage";
 import { getUserProfile, saveUserProfile } from "@/lib/userStorage";
 
-export default function CuratingPage() {
+function CuratingContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [progress, setProgress] = useState(0);
@@ -41,7 +42,6 @@ export default function CuratingPage() {
                 if (!goalResponse.ok) throw new Error("Failed to refine goal");
                 const { detailedGoal } = await goalResponse.json();
 
-                // Update profile with detailed goal
                 // Update profile with detailed goal
                 userProfile.detailedGoal = detailedGoal;
                 saveUserProfile(userProfile);
@@ -96,36 +96,42 @@ export default function CuratingPage() {
                     });
                 }
 
-                // 4. Pre-load images (already done in generateLesson but good to verify)
+                // 4. Finalize assets (Convert images to Base64 for instant loading)
+                setProgress(90);
                 setStatus("Finalizing assets...");
-                setProgress(95);
 
-                const imagePromises: Promise<void>[] = [];
-                generatedLessons.forEach((lesson) => {
-                    if (lesson.headerImage) {
-                        const img = new Image();
-                        const promise = new Promise<void>((resolve) => {
-                            img.onload = () => resolve();
-                            img.onerror = () => {
-                                // If image fails to load, replace with fallback
-                                console.warn(`Failed to load image for ${lesson.title}, using fallback.`);
-                                lesson.headerImage = `https://placehold.co/800x600/E5E0D8/5D4037?text=${encodeURIComponent(lesson.title)}`;
-                                resolve();
-                            }; 
+                const convertToBase64 = async (url: string): Promise<string> => {
+                    try {
+                        const response = await fetch(url);
+                        const blob = await response.blob();
+                        return new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result as string);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(blob);
                         });
-                        img.src = lesson.headerImage;
-                        imagePromises.push(promise);
+                    } catch (error) {
+                        console.warn("Failed to convert image to base64, keeping URL:", error);
+                        return url;
                     }
-                });
-                await Promise.all(imagePromises);
+                };
 
-                setProgress(100);
-                setStatus("Ready to start!");
+                const processedLessons = await Promise.all(generatedLessons.map(async (lesson) => {
+                    const [headerBase64, characterBase64] = await Promise.all([
+                        convertToBase64(lesson.headerImage),
+                        convertToBase64(lesson.characterImage)
+                    ]);
+                    return {
+                        ...lesson,
+                        headerImage: headerBase64,
+                        characterImage: characterBase64
+                    };
+                }));
 
-                // Save all lessons to localStorage
-                saveLessons(generatedLessons);
+                // 5. Save and Navigate
+                saveLessons(processedLessons);
 
-                // Navigate to dashboard
+                // Small delay to ensure storage is written
                 setTimeout(() => {
                     const params = new URLSearchParams(searchParams.toString());
                     router.push(`/dashboard?${params.toString()}`);
@@ -169,5 +175,13 @@ export default function CuratingPage() {
             </div>
             <p className="text-sm text-earthy-brown/40 mt-2">{progress}%</p>
         </div>
+    );
+}
+
+export default function CuratingPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen w-full bg-warm-off-white flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-earthy-brown"></div></div>}>
+            <CuratingContent />
+        </Suspense>
     );
 }

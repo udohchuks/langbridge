@@ -1,26 +1,81 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-primary: #E07A5F;
+  --color-sand-beige: #F4F1DE;
+  --color-earthy-brown: #3D405B;
+  --color-warm-off-white: #FAF8F1;
+  --color-sunny-yellow: #F2CC8F;
+  --color-background-dark: #201512;
+  --color-background-light: #FDFBF5;
+  --color-text-main: #3D405B;
+  --color-tile-bg: #F4F1DE;
+  --color-terracotta-orange: #E07A5F;
+  --color-savanna-green: #3D405B;
+
+  --font-display: var(--font-plus-jakarta), sans-serif;
+  --font-body: var(--font-plus-jakarta), sans-serif;
+
+  --animate-shake: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  @keyframes shake {
+
+    10%,
+    90% {
+      transform: translate3d(-1px, 0, 0);
+    }
+
+    20%,
+    80% {
+      transform: translate3d(2px, 0, 0);
+    }
+
+    30%,
+    50%,
+    70% {
+      transform: translate3d(-4px, 0, 0);
+    }
+
+    40%,
+    60% {
+      transform: translate3d(4px, 0, 0);
+    }
+  }
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Custom Utilities */
+@layer utilities {
+  .torn-edge {
+    mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  }
+
+  .mudcloth-bg {
+    background-color: var(--color-sand-beige);
+    background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBPut1zMR5_8ba45bCeanAocwv0Oq60M46sQ8ZLTIiFYBYoJzFSUuRerZxtyo1x8uJAFxHks-W53JPpE_GgJadlR3-DXto7g_QUV9XmV1bq8cRHzrpkQm_z2EGHSrPL99uq0LMct-Ei3QzMCtsWOLVMB5eVPurvlhF0IvyWWfR73ECKFkQCqxchuhxoib1iMKAYcw8N7DFf4lE4L6ztr6eTFVxdnHcVNryuIVZ35A9ZkwoGHMx_qPJN70imnIXqEaZRmM-SF8IY9aQ");
+    background-repeat: repeat;
+  }
+}
+
+/* Base Styles */
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
 }

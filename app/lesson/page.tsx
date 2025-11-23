@@ -198,7 +198,7 @@ function LessonContent() {
     if (!lesson) return null;
 
     return (
-        <div className="relative flex h-screen w-full max-w-lg mx-auto flex-col bg-sand-beige">
+        <div className="relative flex min-h-screen w-full max-w-lg mx-auto flex-col bg-sand-beige overflow-hidden">
             {/* Top Nav Bar */}
             <div className="absolute top-0 left-0 right-0 z-10 flex items-center bg-transparent p-4 justify-between">
                 <button
@@ -214,7 +214,7 @@ function LessonContent() {
             </div>
 
             {/* Header Image (Top 45%) */}
-            <div className="relative w-full" style={{ height: "45%" }}>
+            <div className="relative w-full flex-shrink-0" style={{ height: "45vh", maxHeight: "400px" }}>
                 {lesson.headerImage ? (
                     <div
                         className="w-full h-full bg-cover bg-center"
@@ -235,7 +235,7 @@ function LessonContent() {
             </div>
 
             {/* Dialogue Area (flex-1 to take remaining space) */}
-            <div ref={dialogueRef} className="flex-1 overflow-y-auto px-4 pt-4 space-y-6 pb-4">
+            <div ref={dialogueRef} className="flex-1 overflow-y-auto px-4 pt-4 space-y-6 pb-4 min-h-0">
                 {dialogue.map((line) => (
                     <div
                         key={line.id}
@@ -281,21 +281,21 @@ function LessonContent() {
             </div>
 
             {/* Bottom Action Bar */}
-            <div className="relative h-auto shrink-0 bg-sand-beige border-t border-black/5">
+            <div className="relative shrink-0 bg-sand-beige border-t border-black/5">
                 <div className="flex justify-center py-2">
                     <p className="text-xs text-savanna-green/60 italic">Tap a message to see translation</p>
                 </div>
 
-                <div className="flex items-center justify-between px-6 py-4">
+                <div className="flex items-center justify-between px-4 sm:px-6 py-4 gap-2">
                     <button
                         onClick={() => setShowCulturalNote(true)}
-                        className="flex items-center justify-center size-14 rounded-full bg-white/80 text-savanna-green shadow-md"
+                        className="flex items-center justify-center size-12 sm:size-14 rounded-full bg-white/80 text-savanna-green shadow-md shrink-0"
                     >
-                        <span className="material-symbols-outlined text-3xl">lightbulb</span>
+                        <span className="material-symbols-outlined text-2xl sm:text-3xl">lightbulb</span>
                     </button>
 
                     {inputMode === "text" ? (
-                        <div className="flex-1 mx-4 flex gap-2">
+                        <div className="flex-1 mx-2 sm:mx-4 flex gap-2 min-w-0">
                             <input
                                 type="text"
                                 value={textInput}
@@ -304,26 +304,26 @@ function LessonContent() {
                                     if (e.key === "Enter") handleSendMessage(textInput);
                                 }}
                                 placeholder="Type your response..."
-                                className="flex-1 px-4 py-3 rounded-full bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-terracotta-orange"
+                                className="flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-full bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-terracotta-orange text-sm sm:text-base min-w-0"
                             />
                             <button
                                 onClick={() => handleSendMessage(textInput)}
-                                className="flex items-center justify-center size-14 rounded-full bg-terracotta-orange text-white shadow-lg"
+                                className="flex items-center justify-center size-12 sm:size-14 rounded-full bg-terracotta-orange text-white shadow-lg shrink-0"
                             >
-                                <span className="material-symbols-outlined text-3xl">send</span>
+                                <span className="material-symbols-outlined text-2xl sm:text-3xl">send</span>
                             </button>
                         </div>
                     ) : (
-                        <button className="relative flex items-center justify-center size-24 rounded-full bg-terracotta-orange text-white shadow-lg">
-                            <span className="material-symbols-outlined text-6xl">mic</span>
+                        <button className="relative flex items-center justify-center size-20 sm:size-24 rounded-full bg-terracotta-orange text-white shadow-lg shrink-0">
+                            <span className="material-symbols-outlined text-5xl sm:text-6xl">mic</span>
                         </button>
                     )}
 
                     <button
                         onClick={() => setInputMode(inputMode === "mic" ? "text" : "mic")}
-                        className="flex items-center justify-center size-14 rounded-full bg-white/80 text-savanna-green shadow-md"
+                        className="flex items-center justify-center size-12 sm:size-14 rounded-full bg-white/80 text-savanna-green shadow-md shrink-0"
                     >
-                        <span className="material-symbols-outlined text-3xl">{inputMode === "mic" ? "keyboard" : "mic"}</span>
+                        <span className="material-symbols-outlined text-2xl sm:text-3xl">{inputMode === "mic" ? "keyboard" : "mic"}</span>
                     </button>
                 </div>
 

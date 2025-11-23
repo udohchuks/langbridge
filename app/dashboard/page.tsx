@@ -16,26 +16,11 @@ function DashboardContent() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const loadDashboard = async () => {
+        const loadDashboard = () => {
             const cachedLessons = getLessons();
 
             if (cachedLessons && cachedLessons.length > 0) {
                 setLessons(cachedLessons);
-
-                // Pre-load images
-                const imagesToLoad = cachedLessons
-                    .map(l => l.headerImage)
-                    .filter(Boolean);
-
-                await Promise.all(imagesToLoad.map(src => {
-                    return new Promise<void>((resolve) => {
-                        const img = new Image();
-                        img.onload = () => resolve();
-                        img.onerror = () => resolve();
-                        img.src = src;
-                    });
-                }));
-
                 setLoading(false);
             } else {
                 // If no lessons, redirect to curating to generate them

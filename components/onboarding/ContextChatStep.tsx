@@ -12,7 +12,7 @@ export function ContextChatStep({ onNext, onSkip }: ContextChatStepProps) {
     return (
         <div className="flex flex-col h-full animate-fade-in justify-between w-full">
             {/* Chat Area */}
-            <div className="flex-1 flex flex-col justify-center pb-6 gap-4">
+            <div className="flex-1 flex flex-col justify-start pt-4 pb-6 gap-4">
                 {/* Bot Message */}
                 <div className="flex gap-3 items-end">
                     <div className="w-8 h-8 rounded-full bg-sand-beige flex items-center justify-center shrink-0 overflow-hidden">

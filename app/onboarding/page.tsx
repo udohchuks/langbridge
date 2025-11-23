@@ -100,6 +100,12 @@ export default function OnboardingPage() {
         router.push(`/curating?context=${encodeURIComponent(context || "")}&details=${encodeURIComponent(details)}&name=${encodeURIComponent(formData.name)}&lang=${encodeURIComponent(formData.language)}`);
     };
 
+    const handleBack = () => {
+        if (currentStep > 1) {
+            setCurrentStep(currentStep - 1);
+        }
+    };
+
     const progressPercentage = (currentStep / totalSteps) * 100;
 
     return (
@@ -108,7 +114,19 @@ export default function OnboardingPage() {
                 <div className="flex flex-col gap-8 w-full h-full">
                     {/* Progress Bar */}
                     <div className="flex flex-col gap-2 pt-4 shrink-0">
-                        <div className="flex justify-between">
+                        <div className="flex justify-between items-center">
+                            {currentStep > 1 ? (
+                                <button
+                                    onClick={handleBack}
+                                    className="flex items-center gap-1 text-earthy-brown dark:text-sand-beige hover:text-primary dark:hover:text-primary transition-colors"
+                                    aria-label="Go back"
+                                >
+                                    <span className="material-symbols-outlined text-xl">arrow_back</span>
+                                    <span className="text-sm font-medium">Back</span>
+                                </button>
+                            ) : (
+                                <div></div>
+                            )}
                             <p className="text-earthy-brown dark:text-sand-beige text-sm font-bold leading-normal">
                                 Step {currentStep} of {totalSteps}
                             </p>
@@ -122,7 +140,7 @@ export default function OnboardingPage() {
                     </div>
 
                     {/* Step Content */}
-                    <div className="flex-1 flex flex-col justify-center min-h-0">
+                    <div className="flex-1 flex flex-col justify-start pt-8 min-h-0">
                         {currentStep === 1 && (
                             <NameStep onNext={handleNameSubmit} initialValue={formData.name} />
                         )}

@@ -27,7 +27,7 @@ export const LanguageStep = ({ onNext, initialValue = "" }: LanguageStepProps) =
     );
 
     return (
-        <div className="flex flex-col gap-6 animate-fade-in h-full">
+        <div className="flex flex-col gap-6 animate-fade-in">
             <div className="space-y-2 text-center">
                 <h1 className="text-3xl font-bold text-earthy-brown dark:text-warm-off-white">
                     What language do you want to learn?
@@ -51,8 +51,8 @@ export const LanguageStep = ({ onNext, initialValue = "" }: LanguageStepProps) =
                         key={lang.id}
                         onClick={() => setSelected(lang.id)}
                         className={`w-full p-4 rounded-xl border-2 flex items-center justify-between transition-all ${selected === lang.id
-                                ? "border-primary bg-primary/5"
-                                : "border-transparent bg-white dark:bg-white/5 hover:bg-sand-beige/30"
+                            ? "border-primary bg-primary/5"
+                            : "border-transparent bg-white dark:bg-white/5 hover:bg-sand-beige/30"
                             }`}
                     >
                         <div className="text-left">
@@ -70,7 +70,7 @@ export const LanguageStep = ({ onNext, initialValue = "" }: LanguageStepProps) =
                 ))}
             </div>
 
-            <div className="pt-2 mt-auto">
+            <div className="pt-4 shrink-0">
                 <Button
                     onClick={() => onNext(selected)}
                     disabled={!selected}

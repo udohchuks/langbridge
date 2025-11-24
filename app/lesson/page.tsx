@@ -198,7 +198,7 @@ function LessonContent() {
     if (!lesson) return null;
 
     return (
-        <div className="relative flex min-h-screen w-full max-w-lg mx-auto flex-col bg-sand-beige overflow-hidden">
+        <div className="relative flex h-[100dvh] w-full max-w-lg mx-auto flex-col bg-sand-beige overflow-hidden">
             {/* Top Nav Bar */}
             <div className="absolute top-0 left-0 right-0 z-10 flex items-center bg-transparent p-4 justify-between">
                 <button

@@ -109,7 +109,7 @@ export default function OnboardingPage() {
     const progressPercentage = (currentStep / totalSteps) * 100;
 
     return (
-        <div className="relative flex h-screen w-full flex-col group/design-root overflow-hidden bg-background-light dark:bg-background-dark font-display">
+        <div className="relative flex h-[100dvh] w-full flex-col group/design-root overflow-hidden bg-background-light dark:bg-background-dark font-display">
             <main className="flex flex-1 flex-col p-6 max-w-md mx-auto w-full h-full">
                 <div className="flex flex-col gap-8 w-full h-full">
                     {/* Progress Bar */}

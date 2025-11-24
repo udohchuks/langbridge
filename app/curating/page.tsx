@@ -96,109 +96,12 @@ function CuratingContent() {
                     });
                 }
 
-                // 4. Finalize assets (Convert images to Base64 for instant loading)
-                setProgress(90);
-                setStatus("Finalizing assets...");
+                // 4. Save and Navigate
+                // We save the direct URLs now to avoid CORS issues and storage limits with Base64
+                setProgress(100);
+                setStatus("Finalizing...");
 
-                // Generate a solid color fallback image as Base64
-                const generateColorFallback = (title: string): string => {
-                    // Create a simple colored rectangle as fallback
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 800;
-                    canvas.height = 400;
-                    const ctx = canvas.getContext('2d');
-
-                    if (ctx) {
-                        // Generate a color based on the title
-                        const hash = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                        const hue = hash % 360;
-                        ctx.fillStyle = `hsl(${hue}, 60%, 50%)`;
-                        ctx.fillRect(0, 0, 800, 400);
-
-                        // Add text
-                        ctx.fillStyle = 'white';
-                        ctx.font = 'bold 48px Arial';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(title, 400, 200);
-                    }
-
-                    return canvas.toDataURL('image/jpeg', 0.8);
-                };
-
-                const convertToBase64 = async (url: string, lessonTitle: string, imageType: 'header' | 'character'): Promise<string> => {
-                    try {
-                        // Try to fetch the image with timeout
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-                        const response = await fetch(url, { signal: controller.signal });
-                        clearTimeout(timeoutId);
-
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-
-                        const blob = await response.blob();
-
-                        // Verify it's actually an image
-                        if (!blob.type.startsWith('image/')) {
-                            throw new Error('Response is not an image');
-                        }
-
-                        return new Promise((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                                const result = reader.result as string;
-                                // Verify the Base64 string is valid and not too small
-                                if (result && result.length > 1000) {
-                                    resolve(result);
-                                } else {
-                                    reject(new Error('Base64 conversion resulted in invalid data'));
-                                }
-                            };
-                            reader.onerror = reject;
-                            reader.readAsDataURL(blob);
-                        });
-                    } catch (error) {
-                        console.warn(`Failed to convert ${imageType} image for "${lessonTitle}":`, error);
-
-                        // Fallback 1: Try placehold.co
-                        try {
-                            const fallbackUrl = `https://placehold.co/800x400/4A5568/white?text=${encodeURIComponent(lessonTitle)}`;
-                            const fallbackResponse = await fetch(fallbackUrl);
-                            if (fallbackResponse.ok) {
-                                const fallbackBlob = await fallbackResponse.blob();
-                                return new Promise((resolve) => {
-                                    const reader = new FileReader();
-                                    reader.onloadend = () => resolve(reader.result as string);
-                                    reader.onerror = () => resolve(generateColorFallback(lessonTitle));
-                                    reader.readAsDataURL(fallbackBlob);
-                                });
-                            }
-                        } catch (fallbackError) {
-                            console.warn('Fallback image also failed, using generated fallback');
-                        }
-
-                        // Fallback 2: Generate a colored rectangle with canvas
-                        return generateColorFallback(lessonTitle);
-                    }
-                };
-
-                const processedLessons = await Promise.all(generatedLessons.map(async (lesson) => {
-                    const [headerBase64, characterBase64] = await Promise.all([
-                        convertToBase64(lesson.headerImage, lesson.title, 'header'),
-                        convertToBase64(lesson.characterImage, lesson.title, 'character')
-                    ]);
-                    return {
-                        ...lesson,
-                        headerImage: headerBase64,
-                        characterImage: characterBase64
-                    };
-                }));
-
-                // 5. Save and Navigate
-                saveLessons(processedLessons);
+                saveLessons(generatedLessons);
 
                 // Small delay to ensure storage is written
                 setTimeout(() => {

@@ -1,16 +1,15 @@
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getGenerativeClient, getApiKey } from '../googleClient';
 
-const apiKey = process.env.GEMINI_API_KEY || "";
-const genAI = new GoogleGenerativeAI(apiKey);
+const getClient = () => getGenerativeClient();
 
 export const goalAgent = {
     refineGoal: async (userProfile: any): Promise<string> => {
-        if (!apiKey) {
+        if (!getApiKey()) {
             return `Mock Detailed Goal: User wants to learn ${userProfile.language} for ${userProfile.goal} with context: ${userProfile.contextDetails}`;
         }
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = getClient().getGenerativeModel({ model: "gemini-2.0-flash" });
 
         const prompt = `
         You are an expert language learning consultant.

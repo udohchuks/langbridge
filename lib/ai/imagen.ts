@@ -1,8 +1,8 @@
-import { GoogleGenAI } from "@google/genai";
-
-const apiKey = process.env.GEMINI_API_KEY || "";
+import { GoogleGenAI, PersonGeneration } from "@google/genai";
+import { getApiKey } from './googleClient';
 
 export async function generateImage(prompt: string): Promise<string> {
+    const apiKey = getApiKey();
     if (!apiKey) {
         console.log("No GEMINI_API_KEY. Using Unsplash fallback for prompt:", prompt);
         const keywords = prompt.split(" ").slice(0, 3).join(",");
@@ -20,12 +20,15 @@ export async function generateImage(prompt: string): Promise<string> {
             config: {
                 numberOfImages: 1,
                 aspectRatio: "16:9",
-                personGeneration: "allow_adult"
+                personGeneration: PersonGeneration.ALLOW_ADULT,
             },
         });
 
         if (response.generatedImages && response.generatedImages.length > 0) {
             const generatedImage = response.generatedImages[0];
+            if (!generatedImage.image) {
+                throw new Error("Image data missing");
+            }
             const imgBytes = generatedImage.image.imageBytes;
 
             // Convert to Base64 data URL

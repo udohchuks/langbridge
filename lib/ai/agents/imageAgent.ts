@@ -1,6 +1,8 @@
 
 import { GoogleGenAI } from "@google/genai";
 
+import { getApiKey } from '../googleClient';
+
 // --- Provider Interface ---
 interface ImageProvider {
     name: string;
@@ -24,7 +26,7 @@ const PollinationsProvider: ImageProvider = {
 const ImagenProvider: ImageProvider = {
     name: "Imagen",
     generate: async (prompt: string): Promise<string> => {
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = getApiKey();
         if (!apiKey) throw new Error("GEMINI_API_KEY not found");
 
         const ai = new GoogleGenAI({ apiKey });

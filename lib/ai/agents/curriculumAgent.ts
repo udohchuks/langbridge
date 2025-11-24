@@ -1,8 +1,7 @@
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getGenerativeClient, getApiKey } from '../googleClient';
 
-const apiKey = process.env.GEMINI_API_KEY || "";
-const genAI = new GoogleGenerativeAI(apiKey);
+const getClient = () => getGenerativeClient();
 
 export interface LessonTopic {
     context: string;
@@ -12,7 +11,7 @@ export interface LessonTopic {
 
 export const curriculumAgent = {
     generateCurriculum: async (userProfile: any, detailedGoal: string): Promise<LessonTopic[]> => {
-        if (!apiKey) {
+        if (!getApiKey()) {
             return [
                 { context: "greeting", title: "Introduction (Mock)", description: "Basics" },
                 { context: "market", title: "Shopping (Mock)", description: "Buying things" },
@@ -20,7 +19,7 @@ export const curriculumAgent = {
             ];
         }
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = getClient().getGenerativeModel({ model: "gemini-2.0-flash" });
 
         const prompt = `
         You are an expert curriculum designer.

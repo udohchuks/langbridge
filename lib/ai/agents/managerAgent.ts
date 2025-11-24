@@ -1,9 +1,8 @@
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getGenerativeClient, getApiKey } from '../googleClient';
 import { imageAgent } from './imageAgent';
 
-const apiKey = process.env.GEMINI_API_KEY || "";
-const genAI = new GoogleGenerativeAI(apiKey);
+const getClient = () => getGenerativeClient();
 
 export interface LessonPlan {
     title: string;
@@ -55,7 +54,7 @@ export const managerAgent = {
         userGoal: string = "General",
         forcedTitle?: string
     ): Promise<LessonPlan & { headerImage: string; characterImage: string }> => {
-        if (!apiKey) {
+        if (!getApiKey()) {
             console.warn("GEMINI_API_KEY is not set. Using mock data.");
             const lessonPlan = getMockLesson(context, userGoal);
             if (forcedTitle) lessonPlan.title = forcedTitle;
@@ -70,7 +69,7 @@ export const managerAgent = {
             };
         }
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = getClient().getGenerativeModel({ model: "gemini-2.0-flash" });
 
         const createPrompt = (feedback?: string) => `
         You are an expert language tutor creating a personalized lesson for a ${userLevel} learner of ${targetLanguage}.

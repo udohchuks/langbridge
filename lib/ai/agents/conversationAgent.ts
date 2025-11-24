@@ -1,8 +1,7 @@
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getGenerativeClient, getApiKey } from '../googleClient';
 
-const apiKey = process.env.GEMINI_API_KEY || "";
-const genAI = new GoogleGenerativeAI(apiKey);
+const getClient = () => getGenerativeClient();
 
 export const conversationAgent = {
     generateResponse: async (
@@ -11,14 +10,14 @@ export const conversationAgent = {
         targetLanguage: string,
         context: string
     ): Promise<{ nativeText: string; englishText: string; nextImagePrompt?: string }> => {
-        if (!apiKey) {
+        if (!getApiKey()) {
             return {
                 nativeText: "Medaase (Mock)",
                 englishText: "Thank you (Mock)",
             };
         }
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = getClient().getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const systemPrompt = `
         You are a roleplay partner in a language lesson.

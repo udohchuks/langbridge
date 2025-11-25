@@ -3,11 +3,12 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+import { getUserProfile } from "@/lib/userStorage";
+
 export default function WelcomePage() {
     const router = useRouter();
 
     useEffect(() => {
-        const { getUserProfile } = require("@/lib/userStorage");
         const user = getUserProfile();
         if (user) {
             router.push("/dashboard");

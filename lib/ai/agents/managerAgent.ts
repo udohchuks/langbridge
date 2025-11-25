@@ -1,8 +1,7 @@
 
-import { getGenerativeClient, getApiKey } from '../googleClient';
+import { getCohereClient, isCohereConfigured } from '../cohereClient';
 import { imageAgent } from './imageAgent';
-
-const getClient = () => getGenerativeClient();
+import { googleTranslateClient } from '../googleTranslateClient';
 
 export interface LessonPlan {
     title: string;
@@ -54,8 +53,8 @@ export const managerAgent = {
         userGoal: string = "General",
         forcedTitle?: string
     ): Promise<LessonPlan & { headerImage: string; characterImage: string }> => {
-        if (!getApiKey()) {
-            console.warn("GEMINI_API_KEY is not set. Using mock data.");
+        if (!isCohereConfigured()) {
+            console.warn("COHERE_API_KEY is not set. Using mock data.");
             const lessonPlan = getMockLesson(context, userGoal);
             if (forcedTitle) lessonPlan.title = forcedTitle;
             const [headerImage, characterImage] = await Promise.all([
@@ -69,9 +68,9 @@ export const managerAgent = {
             };
         }
 
-        const model = getClient().getGenerativeModel({ model: "gemini-2.0-flash" });
+        const cohere = getCohereClient();
 
-        const createPrompt = (feedback?: string) => `
+        const systemPrompt = `
         You are an expert language tutor creating a personalized lesson for a ${userLevel} learner of ${targetLanguage}.
         
         USER PROFILE:
@@ -83,8 +82,6 @@ export const managerAgent = {
         - Scenario Context: "${context}"
         ${forcedTitle ? `- REQUIRED TITLE: "${forcedTitle}"` : ""}
         
-        ${feedback ? `PREVIOUS FEEDBACK (FIX THIS): ${feedback}` : ""}
-
         INSTRUCTIONS:
         Create a realistic, culturally-rich lesson that SPECIFICALLY addresses the user's goal of "${userGoal}" within the context of "${context}".
         
@@ -98,8 +95,7 @@ export const managerAgent = {
             "initialDialogue": [
                 {
                     "speaker": "native",
-                    "nativeText": "The opening line in ${targetLanguage}",
-                    "englishText": "English translation"
+                    "englishText": "The opening line in English"
                 }
             ],
             "culturalNote": {
@@ -115,59 +111,44 @@ export const managerAgent = {
         Return ONLY the JSON object. No markdown.
       `;
 
-        const judgeLesson = async (lesson: LessonPlan, goal: string): Promise<{ valid: boolean; feedback: string }> => {
-            const judgePrompt = `
-            You are a strict Quality Control Judge for a language learning app.
-            Evaluate the following LESSON PLAN against the USER GOAL.
-
-            USER GOAL: "${goal}"
-            LESSON PLAN: ${JSON.stringify(lesson)}
-
-            CRITERIA:
-            1. Does the lesson DIRECTLY address the user's goal? (e.g. if goal is "Business", is the dialogue formal/professional?)
-            2. Is the context appropriate?
-            3. Is the language level appropriate?
-
-            OUTPUT JSON ONLY:
-            {
-                "valid": boolean,
-                "feedback": "Specific instructions on what to fix if invalid, or 'Approved' if valid."
-            }
-            `;
-            try {
-                const result = await model.generateContent(judgePrompt);
-                const text = result.response.text();
-                const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
-                return JSON.parse(jsonStr);
-            } catch (e) {
-                console.error("Judge failed, assuming valid");
-                return { valid: true, feedback: "" };
-            }
-        };
-
         try {
-            // 1. Writer (Attempt 1)
-            let result = await model.generateContent(createPrompt());
-            let text = result.response.text();
-            let jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
-            let lessonPlan = JSON.parse(jsonStr) as LessonPlan;
+            // 1. Generate Lesson Plan
+            const response = await cohere.chat({
+                message: "Generate the lesson plan JSON now.",
+                preamble: systemPrompt,
+                model: "c4ai-aya-expanse-32b", // Using Aya Expanse for better African language support
+                temperature: 0.3,
+            });
 
-            // 2. Judge
-            console.log("Judging lesson...");
-            let judgment = await judgeLesson(lessonPlan, userGoal);
+            let text = response.text;
+            // Clean up markdown if present
+            text = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
-            // 3. Retry if needed (Max 1 retry)
-            if (!judgment.valid) {
-                console.log("Lesson rejected by Judge. Retrying with feedback:", judgment.feedback);
-                result = await model.generateContent(createPrompt(judgment.feedback));
-                text = result.response.text();
-                jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
-                lessonPlan = JSON.parse(jsonStr) as LessonPlan;
-            } else {
-                console.log("Lesson approved by Judge.");
+            let lessonPlan: LessonPlan;
+            try {
+                const rawPlan = JSON.parse(text);
+
+                // Translate the dialogue to target language
+                const translatedDialogue = await Promise.all(rawPlan.initialDialogue.map(async (line: { speaker: "native" | "learner"; englishText: string }) => {
+                    const nativeText = await googleTranslateClient.translateText(line.englishText, targetLanguage);
+                    return {
+                        speaker: line.speaker,
+                        nativeText: nativeText,
+                        englishText: line.englishText
+                    };
+                }));
+
+                lessonPlan = {
+                    ...rawPlan,
+                    initialDialogue: translatedDialogue
+                };
+
+            } catch (e) {
+                console.error("Failed to parse Cohere response:", text);
+                throw e;
             }
 
-            // 4. Generate Images
+            // 2. Generate Images (unchanged)
             const [headerImage, characterImage] = await Promise.all([
                 imageAgent.generate(lessonPlan.imagePrompts.header),
                 imageAgent.generate(lessonPlan.imagePrompts.character),
@@ -179,7 +160,7 @@ export const managerAgent = {
                 characterImage,
             };
         } catch (error) {
-            console.error("Error generating lesson:", error);
+            console.error("Error generating lesson with Cohere:", error);
             const lessonPlan = getMockLesson(context, userGoal);
             const [headerImage, characterImage] = await Promise.all([
                 imageAgent.generate(lessonPlan.imagePrompts.header),

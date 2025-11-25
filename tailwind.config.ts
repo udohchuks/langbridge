@@ -10,18 +10,18 @@ const config: Config = {
     theme: {
         extend: {
             colors: {
-                "primary": "#E07A5F",        // Terracotta
-                "sand-beige": "#F4F1DE",     // Beige
-                "earthy-brown": "#3D405B",   // Deep Blue/Brown
+                "primary": "#D94F04",        // Vibrant Burnt Orange
+                "sand-beige": "#F4EBD9",     // Warmer Sand
+                "earthy-brown": "#4A3B32",   // Darker Earth
                 "warm-off-white": "#FAF8F1", // Off White
-                "sunny-yellow": "#F2CC8F",   // Yellow
+                "sunny-yellow": "#F2A900",   // Rich Gold
                 "background-dark": "#201512",
                 "background-light": "#FDFBF5",
-                "text-main": "#3D405B",
-                "tile-bg": "#F4F1DE",
+                "text-main": "#2C1A1D",      // Dark Coffee
+                "tile-bg": "#F4EBD9",
                 // Specific from lesson design
-                "terracotta-orange": "#E07A5F",
-                "savanna-green": "#3D405B",
+                "terracotta-orange": "#D94F04",
+                "savanna-green": "#2E5902",  // Deep Savanna Green
             },
             fontFamily: {
                 "display": ["var(--font-plus-jakarta)", "sans-serif"],

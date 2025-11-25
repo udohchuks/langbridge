@@ -20,7 +20,7 @@ export interface Lesson {
     };
 }
 
-export const generateLesson = async (context: string): Promise<Lesson> => {
+export const generateLesson = async (): Promise<Lesson> => {
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 2000));
 

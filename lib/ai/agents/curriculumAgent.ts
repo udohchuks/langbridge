@@ -1,7 +1,5 @@
 
-import { getGenerativeClient, getApiKey } from '../googleClient';
-
-const getClient = () => getGenerativeClient();
+import { getCohereClient, isCohereConfigured } from '../cohereClient';
 
 export interface LessonTopic {
     context: string;
@@ -10,8 +8,8 @@ export interface LessonTopic {
 }
 
 export const curriculumAgent = {
-    generateCurriculum: async (userProfile: any, detailedGoal: string): Promise<LessonTopic[]> => {
-        if (!getApiKey()) {
+    generateCurriculum: async (userProfile: { language: string; level: string }, detailedGoal: string): Promise<LessonTopic[]> => {
+        if (!isCohereConfigured()) {
             return [
                 { context: "greeting", title: "Introduction (Mock)", description: "Basics" },
                 { context: "market", title: "Shopping (Mock)", description: "Buying things" },
@@ -19,7 +17,7 @@ export const curriculumAgent = {
             ];
         }
 
-        const model = getClient().getGenerativeModel({ model: "gemini-2.0-flash" });
+        const cohere = getCohereClient();
 
         const prompt = `
         You are an expert curriculum designer.
@@ -50,12 +48,18 @@ export const curriculumAgent = {
         `;
 
         try {
-            const result = await model.generateContent(prompt);
-            const text = result.response.text();
+            const response = await cohere.chat({
+                message: "Generate the curriculum JSON now.",
+                preamble: prompt,
+                model: "c4ai-aya-expanse-32b",
+                temperature: 0.3,
+            });
+
+            const text = response.text;
             const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
             return JSON.parse(jsonStr) as LessonTopic[];
         } catch (error) {
-            console.error("Error generating curriculum:", error);
+            console.error("Error generating curriculum with Cohere:", error);
             return [
                 { context: "greeting", title: "Introduction", description: "Basics of greeting" },
                 { context: "general", title: "General Conversation", description: "Basic phrases" },

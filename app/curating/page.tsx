@@ -13,7 +13,7 @@ function CuratingContent() {
     const searchParams = useSearchParams();
     const [progress, setProgress] = useState(0);
     const [status, setStatus] = useState("Preparing your lessons...");
-    const [displayGoal, setDisplayGoal] = useState("personalized");
+    const [displayGoal] = useState("personalized");
 
     useEffect(() => {
         const generateLessons = async () => {

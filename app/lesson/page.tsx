@@ -9,6 +9,7 @@ interface DialogueLine {
     speaker: "native" | "learner";
     nativeText: string;
     englishText: string;
+    translation?: string;
 }
 
 interface LessonData {
@@ -120,8 +121,22 @@ function LessonContent() {
         }
     }, [dialogue]);
 
+
+    const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+
+
     const playAudio = (text: string) => {
+        if (playingAudio) return; // Prevent overlapping playback
+
+        setPlayingAudio(text);
+
         const utterance = new SpeechSynthesisUtterance(text);
+        // Optional: Try to match voice to language if possible, but browser support for African languages is limited.
+        // We rely on the browser's default behavior.
+
+        utterance.onend = () => setPlayingAudio(null);
+        utterance.onerror = () => setPlayingAudio(null);
+
         window.speechSynthesis.speak(utterance);
     };
 
@@ -175,8 +190,14 @@ function LessonContent() {
                 speaker: "native",
                 nativeText: data.nativeText,
                 englishText: data.englishText,
+                translation: data.englishText,
             };
-            setDialogue((prev) => [...prev, aiMessage]);
+
+            setDialogue((prev) => prev.map(msg =>
+                msg.id === userMessage.id
+                    ? { ...msg, translation: data.userTranslation }
+                    : msg
+            ).concat(aiMessage));
 
             setChatHistory([...newHistory, { role: "model", parts: data.nativeText }]);
         } catch (error) {
@@ -213,71 +234,78 @@ function LessonContent() {
                 </button>
             </div>
 
-            {/* Header Image (Top 45%) */}
-            <div className="relative w-full flex-shrink-0" style={{ height: "45vh", maxHeight: "400px" }}>
-                {lesson.headerImage ? (
-                    <div
-                        className="w-full h-full bg-cover bg-center"
-                        style={{ backgroundImage: `url("${lesson.headerImage}")` }}
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-sand-beige/50">
-                        <div className="text-center">
-                            <svg width="120" height="120" viewBox="0 0 120 120" className="mx-auto text-savanna-green/20">
-                                <rect x="10" y="10" width="100" height="100" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="5,5" />
-                                <line x1="10" y1="10" x2="110" y2="110" stroke="currentColor" strokeWidth="2" />
-                                <line x1="110" y1="10" x2="10" y2="110" stroke="currentColor" strokeWidth="2" />
-                            </svg>
-                            <p className="text-sm text-savanna-green/40 mt-2">Loading image...</p>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Dialogue Area (flex-1 to take remaining space) */}
-            <div ref={dialogueRef} className="flex-1 overflow-y-auto px-4 pt-4 space-y-6 pb-4 min-h-0">
-                {dialogue.map((line) => (
-                    <div
-                        key={line.id}
-                        className={`flex items-end gap-3 ${line.speaker === "learner" ? "justify-end" : "justify-start"}`}
-                    >
-                        {line.speaker === "native" && (
-                            <div
-                                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 shrink-0 shadow"
-                                style={{ backgroundImage: `url("${lesson.characterImage}")` }}
-                            ></div>
-                        )}
-
-                        <div className={`flex flex-col gap-1 ${line.speaker === "learner" ? "items-end" : "items-start"}`}>
-                            {line.speaker === "native" && (
-                                <p className="text-savanna-green/70 text-[13px] font-medium">{lesson.character}</p>
-                            )}
-
-                            <div
-                                onClick={() => toggleTranslation(line.id)}
-                                className={`flex items-center gap-2 max-w-[360px] rounded-xl px-4 py-3 shadow cursor-pointer ${line.speaker === "learner" ? "bg-terracotta-orange text-white" : "bg-white text-savanna-green"
-                                    }`}
-                            >
-                                <p className="text-base font-normal">{line.nativeText}</p>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        playAudio(line.nativeText);
-                                    }}
-                                    className={line.speaker === "learner" ? "text-white/80" : "text-savanna-green/60"}
-                                >
-                                    <span className="material-symbols-outlined text-xl">volume_up</span>
-                                </button>
+            {/* Scrollable Content Wrapper */}
+            <div ref={dialogueRef} className="flex-1 overflow-y-auto min-h-0 flex flex-col">
+                {/* Header Image (Top 45%) */}
+                <div className="relative w-full flex-shrink-0" style={{ height: "45vh", maxHeight: "400px" }}>
+                    {lesson.headerImage ? (
+                        <div
+                            className="w-full h-full bg-cover bg-center"
+                            style={{ backgroundImage: `url("${lesson.headerImage}")` }}
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-sand-beige/50">
+                            <div className="text-center">
+                                <svg width="120" height="120" viewBox="0 0 120 120" className="mx-auto text-savanna-green/20">
+                                    <rect x="10" y="10" width="100" height="100" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="5,5" />
+                                    <line x1="10" y1="10" x2="110" y2="110" stroke="currentColor" strokeWidth="2" />
+                                    <line x1="110" y1="10" x2="10" y2="110" stroke="currentColor" strokeWidth="2" />
+                                </svg>
+                                <p className="text-sm text-savanna-green/40 mt-2">Loading image...</p>
                             </div>
-
-                            {translationVisible.has(line.id) && (
-                                <p className={`text-sm font-medium italic ${line.speaker === "learner" ? "text-savanna-green/80 mr-2" : "text-savanna-green/80 ml-2"}`}>
-                                    {line.englishText}
-                                </p>
-                            )}
                         </div>
-                    </div>
-                ))}
+                    )}
+                </div>
+
+                {/* Dialogue Area */}
+                <div className="px-4 pt-4 space-y-6 pb-4">
+                    {dialogue.map((line) => (
+                        <div
+                            key={line.id}
+                            className={`flex items-end gap-3 ${line.speaker === "learner" ? "justify-end" : "justify-start"}`}
+                        >
+                            {line.speaker === "native" && (
+                                <div
+                                    className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 shrink-0 shadow"
+                                    style={{ backgroundImage: `url("${lesson.characterImage}")` }}
+                                ></div>
+                            )}
+
+                            <div className={`flex flex-col gap-1 ${line.speaker === "learner" ? "items-end" : "items-start"}`}>
+                                {line.speaker === "native" && (
+                                    <p className="text-savanna-green/70 text-[13px] font-medium">{lesson.character}</p>
+                                )}
+
+                                <div
+                                    onClick={() => toggleTranslation(line.id)}
+                                    className={`flex items-center gap-2 max-w-[360px] rounded-xl px-4 py-3 shadow cursor-pointer ${line.speaker === "learner" ? "bg-terracotta-orange text-white" : "bg-white text-savanna-green"
+                                        }`}
+                                >
+                                    <p className="text-base font-normal">{line.nativeText}</p>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const textToPlay = line.speaker === "learner" ? (line.translation || "") : line.nativeText;
+                                            if (textToPlay) playAudio(textToPlay);
+                                        }}
+                                        className={line.speaker === "learner" ? "text-white/80" : "text-savanna-green/60"}
+                                        disabled={playingAudio === (line.speaker === "learner" ? (line.translation || "") : line.nativeText)}
+                                    >
+                                        <span className={`material-symbols-outlined text-xl ${playingAudio === (line.speaker === "learner" ? (line.translation || "") : line.nativeText) ? "animate-pulse" : ""}`}>
+                                            {playingAudio === (line.speaker === "learner" ? (line.translation || "") : line.nativeText) ? "volume_up" : "volume_up"}
+                                        </span>
+                                    </button>
+                                </div>
+
+                                {translationVisible.has(line.id) && (
+                                    <p className={`text-sm font-medium italic ${line.speaker === "learner" ? "text-savanna-green/80 mr-2" : "text-savanna-green/80 ml-2"}`}>
+                                        {line.translation || line.englishText}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
 
             {/* Bottom Action Bar */}

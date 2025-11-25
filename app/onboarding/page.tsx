@@ -109,9 +109,9 @@ export default function OnboardingPage() {
     const progressPercentage = (currentStep / totalSteps) * 100;
 
     return (
-        <div className="relative flex h-[100dvh] w-full flex-col group/design-root overflow-hidden bg-background-light dark:bg-background-dark font-display">
-            <main className="flex flex-1 flex-col p-6 max-w-md mx-auto w-full h-full">
-                <div className="flex flex-col gap-8 w-full h-full">
+        <div className="relative flex h-[100dvh] w-full flex-col group/design-root overflow-hidden mudcloth-bg font-display">
+            <main className="flex flex-1 flex-col p-6 max-w-md mx-auto w-full h-full z-10">
+                <div className="flex flex-col gap-8 w-full h-full bg-sand-beige/90 backdrop-blur-sm p-6 rounded-3xl shadow-lg border border-earthy-brown/10">
                     {/* Progress Bar */}
                     <div className="flex flex-col gap-2 pt-4 shrink-0">
                         <div className="flex justify-between items-center">
@@ -140,7 +140,7 @@ export default function OnboardingPage() {
                     </div>
 
                     {/* Step Content */}
-                    <div className="flex-1 flex flex-col justify-start pt-8 min-h-0">
+                    <div className="flex-1 flex flex-col justify-start pt-8 min-h-0 overflow-hidden">
                         {currentStep === 1 && (
                             <NameStep onNext={handleNameSubmit} initialValue={formData.name} />
                         )}

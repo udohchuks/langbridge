@@ -1,15 +1,13 @@
 
-import { getGenerativeClient, getApiKey } from '../googleClient';
-
-const getClient = () => getGenerativeClient();
+import { getCohereClient, isCohereConfigured } from '../cohereClient';
 
 export const goalAgent = {
-    refineGoal: async (userProfile: any): Promise<string> => {
-        if (!getApiKey()) {
+    refineGoal: async (userProfile: { name: string; age: string; language: string; level: string; goal: string; contextDetails: string }): Promise<string> => {
+        if (!isCohereConfigured()) {
             return `Mock Detailed Goal: User wants to learn ${userProfile.language} for ${userProfile.goal} with context: ${userProfile.contextDetails}`;
         }
 
-        const model = getClient().getGenerativeModel({ model: "gemini-2.0-flash" });
+        const cohere = getCohereClient();
 
         const prompt = `
         You are an expert language learning consultant.
@@ -35,10 +33,15 @@ export const goalAgent = {
         `;
 
         try {
-            const result = await model.generateContent(prompt);
-            return result.response.text();
+            const response = await cohere.chat({
+                message: "Refine the goal now.",
+                preamble: prompt,
+                model: "c4ai-aya-expanse-32b",
+                temperature: 0.3,
+            });
+            return response.text;
         } catch (error) {
-            console.error("Error refining goal:", error);
+            console.error("Error refining goal with Cohere:", error);
             return `User wants to learn ${userProfile.language} for ${userProfile.goal}.`;
         }
     }

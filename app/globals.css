@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #E07A5F;
-  --color-sand-beige: #F4F1DE;
-  --color-earthy-brown: #3D405B;
+  --color-primary: #D94F04;
+  --color-sand-beige: #F4EBD9;
+  --color-earthy-brown: #4A3B32;
   --color-warm-off-white: #FAF8F1;
-  --color-sunny-yellow: #F2CC8F;
+  --color-sunny-yellow: #F2A900;
   --color-background-dark: #201512;
   --color-background-light: #FDFBF5;
-  --color-text-main: #3D405B;
-  --color-tile-bg: #F4F1DE;
-  --color-terracotta-orange: #E07A5F;
-  --color-savanna-green: #3D405B;
+  --color-text-main: #2C1A1D;
+  --color-tile-bg: #F4EBD9;
+  --color-terracotta-orange: #D94F04;
+  --color-savanna-green: #2E5902;
 
   --font-display: var(--font-plus-jakarta), sans-serif;
   --font-body: var(--font-plus-jakarta), sans-serif;
@@ -53,8 +53,16 @@
 
   .mudcloth-bg {
     background-color: var(--color-sand-beige);
-    background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBPut1zMR5_8ba45bCeanAocwv0Oq60M46sQ8ZLTIiFYBYoJzFSUuRerZxtyo1x8uJAFxHks-W53JPpE_GgJadlR3-DXto7g_QUV9XmV1bq8cRHzrpkQm_z2EGHSrPL99uq0LMct-Ei3QzMCtsWOLVMB5eVPurvlhF0IvyWWfR73ECKFkQCqxchuhxoib1iMKAYcw8N7DFf4lE4L6ztr6eTFVxdnHcVNryuIVZ35A9ZkwoGHMx_qPJN70imnIXqEaZRmM-SF8IY9aQ");
+    background-image: linear-gradient(rgba(244, 235, 217, 0.85), rgba(244, 235, 217, 0.85)), url("/assets/theme/pattern-1.png");
     background-repeat: repeat;
+    background-size: 300px;
+    background-blend-mode: normal;
+  }
+
+  .african-art-bg {
+    background-image: url("/assets/theme/art-1.png");
+    background-size: cover;
+    background-position: center;
   }
 }
 
@@ -78,4 +86,9 @@ body {
   background: linear-gradient(to bottom,
       transparent,
       rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+  background-color: var(--color-sand-beige);
+  background-image: linear-gradient(rgba(244, 235, 217, 0.85), rgba(244, 235, 217, 0.85)), url("/assets/theme/pattern-1.png");
+  background-repeat: repeat;
+  background-size: 300px;
+  background-blend-mode: normal;
 }

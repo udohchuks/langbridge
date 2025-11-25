@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+import { getUserProfile } from "@/lib/userStorage";
+
 export default function SplashScreen() {
   const router = useRouter();
 
@@ -11,7 +13,6 @@ export default function SplashScreen() {
       // Dynamic import to avoid SSR issues with localStorage if needed, 
       // but since we are in useEffect, it's client-side only anyway.
       // We'll use the utility we created.
-      const { getUserProfile } = require("@/lib/userStorage");
       const user = getUserProfile();
 
       if (user) {
@@ -29,7 +30,7 @@ export default function SplashScreen() {
   }, [router]);
 
   return (
-    <div className="relative flex h-screen min-h-screen w-full flex-col bg-sand-beige overflow-hidden">
+    <div className="relative flex h-screen min-h-screen w-full flex-col mudcloth-bg overflow-hidden">
       <div className="flex h-full w-full grow items-center justify-center">
         <h1 className="text-4xl md:text-6xl font-bold text-earthy-brown animate-pulse-slow tracking-tight">
           LangBridge

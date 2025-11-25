@@ -1,18 +1,18 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Settings, User } from "lucide-react";
 import { Timeline } from "@/components/dashboard/Timeline";
 import { LessonCard } from "@/components/dashboard/LessonCard";
-import { getLessons } from "@/lib/lessonStorage";
+import { getLessons, LessonData } from "@/lib/lessonStorage";
 import { useEffect, useState } from "react";
 
 import { Suspense } from "react";
 
 function DashboardContent() {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const [lessons, setLessons] = useState<any[]>([]);
+
+    const [lessons, setLessons] = useState<LessonData[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -34,7 +34,7 @@ function DashboardContent() {
         };
 
         loadDashboard();
-    }, []);
+    }, [router]);
 
     const handleStartLesson = (context: string) => {
         router.push(`/lesson?context=${context}`);
@@ -49,7 +49,7 @@ function DashboardContent() {
     }
 
     return (
-        <div className="min-h-screen w-full bg-warm-off-white font-display overflow-x-hidden">
+        <div className="min-h-[100dvh] w-full mudcloth-bg font-display overflow-x-hidden">
             {/* Header */}
             <header className="sticky top-0 z-10 bg-warm-off-white/80 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-earthy-brown/5">
                 <div className="w-10 h-10 bg-earthy-brown rounded-full flex items-center justify-center">
@@ -72,7 +72,7 @@ function DashboardContent() {
                 </div>
 
                 <Timeline>
-                    {lessons.map((lesson: any, index: number) => {
+                    {lessons.map((lesson: LessonData) => {
                         // All lessons are open/active as per requirements
                         const status = "active";
 

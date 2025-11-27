@@ -1,0 +1,12 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="720" fill="#F4EBD9"/>
+  <g opacity="0.3">
+    <circle cx="640" cy="360" r="150" stroke="#4A3B32" stroke-width="3" fill="none"/>
+    <path d="M640 210 L640 510 M490 360 L790 360" stroke="#4A3B32" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="640" cy="300" r="15" fill="#D94F04"/>
+    <path d="M590 400 Q640 450 690 400" stroke="#D94F04" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </g>
+  <text x="640" y="600" font-family="Arial, sans-serif" font-size="36" fill="#4A3B32" text-anchor="middle" opacity="0.5">
+    Lesson Image
+  </text>
+</svg>

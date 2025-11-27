@@ -12,10 +12,17 @@ export interface UserProfile {
 
 const STORAGE_KEY = 'langbridge_user_profile';
 
-export const saveUserProfile = (profile: UserProfile): void => {
+export const saveUserProfile = (profile: UserProfile): boolean => {
     if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+            return true;
+        } catch (error) {
+            console.error("Failed to save user profile to localStorage", error);
+            return false;
+        }
     }
+    return false;
 };
 
 export const getUserProfile = (): UserProfile | null => {

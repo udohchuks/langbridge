@@ -1,5 +1,5 @@
 
-import { getCohereClient, isCohereConfigured } from '../cohereClient';
+import { getGenerativeClient } from '../googleClient';
 import { googleTranslateClient } from '../googleTranslateClient';
 
 export const conversationAgent = {
@@ -9,22 +9,15 @@ export const conversationAgent = {
         targetLanguage: string,
         context: string
     ): Promise<{ nativeText: string; englishText: string; userTranslation: string; nextImagePrompt?: string }> => {
-        if (!isCohereConfigured()) {
-            return {
-                nativeText: "Medaase (Mock)",
-                englishText: "Thank you (Mock)",
-                userTranslation: "Medaase (Mock User Translation)",
-            };
-        }
 
-        const cohere = getCohereClient();
+        const client = getGenerativeClient();
 
         // 1. Translate User Input
         let inputForAya = userInput;
         let userTranslationInTarget = userInput;
 
         try {
-            // Translate to English for Aya's understanding
+            // Translate to English for AI's understanding
             inputForAya = await googleTranslateClient.translateToEnglish(userInput);
 
             // Translate to Target Language for the UI (userTranslation field)
@@ -49,41 +42,50 @@ export const conversationAgent = {
         Your response MUST be a JSON object with:
         - englishResponse: Your response in English.
         - nextImagePrompt: (Optional) If the scene changes significantly or a new key object is introduced, provide a new image prompt. Otherwise null.
+        Return ONLY the JSON object. No markdown.
       `;
 
-        // Map history to Cohere format
-        // Note: We are sending raw history. Ideally, we'd translate this too, but for now we rely on Aya's context window.
+        // Map history to new API format
         const chatHistory = history.map(h => ({
-            role: h.role === "user" ? "USER" : "CHATBOT",
-            message: h.parts
-        })) as { role: "USER" | "CHATBOT"; message: string }[];
+            role: h.role === "user" ? "user" : "model",
+            parts: [{ text: h.parts }]
+        }));
 
         try {
-            const response = await cohere.chat({
-                message: `User said (in English): ${inputForAya}`, // Explicitly state it's English
-                chatHistory: chatHistory,
-                preamble: systemPrompt,
-                model: "c4ai-aya-expanse-32b",
-                temperature: 0.3,
+            const response = await client.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: [
+                    ...chatHistory,
+                    {
+                        role: "user",
+                        parts: [{ text: systemPrompt }]
+                    }
+                ]
             });
 
-            const text = response.text;
+            const text = response.text || "";
             const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
-            const ayaResponse = JSON.parse(jsonStr);
+            const aiResponse = JSON.parse(jsonStr);
 
-            // 2. Translate Aya's Response to Target Language
-            const nativeText = await googleTranslateClient.translateText(ayaResponse.englishResponse, targetLanguage);
+            // 2. Translate AI's Response to Target Language
+            const nativeText = await googleTranslateClient.translateText(aiResponse.englishResponse, targetLanguage);
 
             return {
                 nativeText: nativeText,
-                englishText: ayaResponse.englishResponse,
+                englishText: aiResponse.englishResponse,
                 userTranslation: userTranslationInTarget,
-                nextImagePrompt: ayaResponse.nextImagePrompt
+                nextImagePrompt: aiResponse.nextImagePrompt
             };
-        } catch (error) {
-            console.error("Error in chat with Cohere or Translation:", error);
+        } catch (error: any) {
+            console.error("Error in chat with Gemini or Translation:", error);
+            if (error.message) {
+                console.error("Error message:", error.message);
+            }
+            if (error.stack) {
+                console.error("Error stack:", error.stack);
+            }
             return {
-                nativeText: "...",
+                nativeText: "(Connection Error)",
                 englishText: "I'm having trouble understanding. (Error)",
                 userTranslation: "...",
             };

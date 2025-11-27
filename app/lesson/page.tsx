@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ProgressBar } from "@/components/ui/ProgressBar";
+
 
 interface DialogueLine {
     id: string;
@@ -122,6 +122,8 @@ function LessonContent() {
     }, [dialogue]);
 
 
+    const [isTyping, setIsTyping] = useState(false);
+
     const [playingAudio, setPlayingAudio] = useState<string | null>(null);
 
 
@@ -163,6 +165,7 @@ function LessonContent() {
         };
         setDialogue((prev) => [...prev, userMessage]);
         setTextInput("");
+        setIsTyping(true);
 
         const newHistory = [...chatHistory, { role: "user" as const, parts: message }];
 
@@ -202,15 +205,19 @@ function LessonContent() {
             setChatHistory([...newHistory, { role: "model", parts: data.nativeText }]);
         } catch (error) {
             console.error("Error sending message:", error);
+        } finally {
+            setIsTyping(false);
         }
     };
 
     if (loading) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-sand-beige flex-col gap-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                <p className="text-text-main font-medium animate-pulse">
-                    Curating your lesson with AI...
+                <div className="w-64 bg-earthy-brown/10 rounded-full h-2 overflow-hidden">
+                    <div className="h-full bg-primary animate-pulse rounded-full w-full origin-left scale-x-50"></div>
+                </div>
+                <p className="text-earthy-brown/60 text-sm font-medium animate-pulse">
+                    Preparing your lesson...
                 </p>
             </div>
         );
@@ -228,16 +235,13 @@ function LessonContent() {
                 >
                     <span className="material-symbols-outlined">arrow_back</span>
                 </button>
-                <ProgressBar totalSteps={6} currentStep={dialogue.length} />
-                <button className="flex size-12 items-center justify-center text-white bg-black/20 rounded-full">
-                    <span className="material-symbols-outlined">backpack</span>
-                </button>
+
             </div>
 
             {/* Scrollable Content Wrapper */}
             <div ref={dialogueRef} className="flex-1 overflow-y-auto min-h-0 flex flex-col">
                 {/* Header Image (Top 45%) */}
-                <div className="relative w-full flex-shrink-0" style={{ height: "45vh", maxHeight: "400px" }}>
+                <div className="relative w-full flex-shrink-0 h-[35vh] sm:h-[45vh]" style={{ maxHeight: "400px" }}>
                     {lesson.headerImage ? (
                         <div
                             className="w-full h-full bg-cover bg-center"
@@ -258,7 +262,7 @@ function LessonContent() {
                 </div>
 
                 {/* Dialogue Area */}
-                <div className="px-4 pt-4 space-y-6 pb-4">
+                <div className="px-4 pt-4 space-y-6 pb-24 sm:pb-4">
                     {dialogue.map((line) => (
                         <div
                             key={line.id}
@@ -278,17 +282,17 @@ function LessonContent() {
 
                                 <div
                                     onClick={() => toggleTranslation(line.id)}
-                                    className={`flex items-center gap-2 max-w-[360px] rounded-xl px-4 py-3 shadow cursor-pointer ${line.speaker === "learner" ? "bg-terracotta-orange text-white" : "bg-white text-savanna-green"
+                                    className={`flex items-center gap-2 max-w-[90%] sm:max-w-[80%] w-fit min-w-[4rem] rounded-xl px-4 py-3 shadow cursor-pointer break-words ${line.speaker === "learner" ? "bg-terracotta-orange text-white" : "bg-white text-savanna-green"
                                         }`}
                                 >
-                                    <p className="text-base font-normal">{line.nativeText}</p>
+                                    <p className="text-base font-normal flex-1">{line.nativeText}</p>
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             const textToPlay = line.speaker === "learner" ? (line.translation || "") : line.nativeText;
                                             if (textToPlay) playAudio(textToPlay);
                                         }}
-                                        className={line.speaker === "learner" ? "text-white/80" : "text-savanna-green/60"}
+                                        className={`shrink-0 ${line.speaker === "learner" ? "text-white/80" : "text-savanna-green/60"}`}
                                         disabled={playingAudio === (line.speaker === "learner" ? (line.translation || "") : line.nativeText)}
                                     >
                                         <span className={`material-symbols-outlined text-xl ${playingAudio === (line.speaker === "learner" ? (line.translation || "") : line.nativeText) ? "animate-pulse" : ""}`}>
@@ -305,6 +309,24 @@ function LessonContent() {
                             </div>
                         </div>
                     ))}
+                    {isTyping && (
+                        <div className="flex items-end gap-3 justify-start">
+                            <div
+                                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 shrink-0 shadow"
+                                style={{ backgroundImage: `url("${lesson.characterImage}")` }}
+                            ></div>
+                            <div className="flex flex-col gap-1 items-start">
+                                <p className="text-savanna-green/70 text-[13px] font-medium">{lesson.character}</p>
+                                <div className="bg-white text-savanna-green rounded-xl px-4 py-3 shadow w-fit">
+                                    <div className="flex space-x-1 h-6 items-center">
+                                        <div className="w-2 h-2 bg-savanna-green/40 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                        <div className="w-2 h-2 bg-savanna-green/40 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                        <div className="w-2 h-2 bg-savanna-green/40 rounded-full animate-bounce"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -382,7 +404,16 @@ function LessonContent() {
 
 export default function LessonPage() {
     return (
-        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-sand-beige"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}>
+        <Suspense fallback={
+            <div className="flex h-screen w-full items-center justify-center bg-sand-beige flex-col gap-4">
+                <div className="w-64 bg-earthy-brown/10 rounded-full h-2 overflow-hidden">
+                    <div className="h-full bg-primary animate-pulse rounded-full w-full origin-left scale-x-50"></div>
+                </div>
+                <p className="text-earthy-brown/60 text-sm font-medium animate-pulse">
+                    Loading...
+                </p>
+            </div>
+        }>
             <LessonContent />
         </Suspense>
     );

@@ -1,5 +1,5 @@
 
-import { getCohereClient, isCohereConfigured } from '../cohereClient';
+import { getGenerativeClient } from '../googleClient';
 import { imageAgent } from './imageAgent';
 import { googleTranslateClient } from '../googleTranslateClient';
 
@@ -53,22 +53,8 @@ export const managerAgent = {
         userGoal: string = "General",
         forcedTitle?: string
     ): Promise<LessonPlan & { headerImage: string; characterImage: string }> => {
-        if (!isCohereConfigured()) {
-            console.warn("COHERE_API_KEY is not set. Using mock data.");
-            const lessonPlan = getMockLesson(context, userGoal);
-            if (forcedTitle) lessonPlan.title = forcedTitle;
-            const [headerImage, characterImage] = await Promise.all([
-                imageAgent.generate(lessonPlan.imagePrompts.header),
-                imageAgent.generate(lessonPlan.imagePrompts.character),
-            ]);
-            return {
-                ...lessonPlan,
-                headerImage,
-                characterImage,
-            };
-        }
 
-        const cohere = getCohereClient();
+        const client = getGenerativeClient();
 
         const systemPrompt = `
         You are an expert language tutor creating a personalized lesson for a ${userLevel} learner of ${targetLanguage}.
@@ -113,14 +99,13 @@ export const managerAgent = {
 
         try {
             // 1. Generate Lesson Plan
-            const response = await cohere.chat({
-                message: "Generate the lesson plan JSON now.",
-                preamble: systemPrompt,
-                model: "c4ai-aya-expanse-32b", // Using Aya Expanse for better African language support
-                temperature: 0.3,
+            const response = await client.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: systemPrompt
             });
 
-            let text = response.text;
+            let text = response.text || "";
+
             // Clean up markdown if present
             text = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
@@ -144,7 +129,7 @@ export const managerAgent = {
                 };
 
             } catch (e) {
-                console.error("Failed to parse Cohere response:", text);
+                console.error("Failed to parse Gemini response:", text);
                 throw e;
             }
 
@@ -160,7 +145,7 @@ export const managerAgent = {
                 characterImage,
             };
         } catch (error) {
-            console.error("Error generating lesson with Cohere:", error);
+            console.error("Error generating lesson with Gemini:", error);
             const lessonPlan = getMockLesson(context, userGoal);
             const [headerImage, characterImage] = await Promise.all([
                 imageAgent.generate(lessonPlan.imagePrompts.header),

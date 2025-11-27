@@ -29,8 +29,8 @@ function CuratingContent() {
                 const targetLanguage = userProfile.language || "Twi";
                 const userLevel = userProfile.level || "Beginner";
 
-                // 1. Refine Goal (Goal Describer Agent)
-                setStatus("Analyzing your profile and refining your goals...");
+                // 1. Refine Goal
+                setStatus("Personalizing your learning journey...");
                 setProgress(10);
 
                 const goalResponse = await fetch("/api/goal/refine", {
@@ -46,8 +46,8 @@ function CuratingContent() {
                 userProfile.detailedGoal = detailedGoal;
                 saveUserProfile(userProfile);
 
-                // 2. Generate Curriculum (Curriculum Agent)
-                setStatus("Designing your personalized curriculum...");
+                // 2. Generate Curriculum
+                setStatus("Crafting your personalized curriculum...");
                 setProgress(30);
 
                 const curriculumResponse = await fetch("/api/curriculum/generate", {
@@ -61,10 +61,10 @@ function CuratingContent() {
 
                 const generatedLessons: LessonData[] = [];
 
-                // 3. Generate Lessons (Writer + Judge + Image Agents)
+                // 3. Generate Lessons
                 for (let i = 0; i < curriculum.length; i++) {
                     const topic = curriculum[i];
-                    setStatus(`Creating lesson ${i + 1}/${curriculum.length}: "${topic.title}"...`);
+                    setStatus(`Curating lesson ${i + 1}/${curriculum.length}: "${topic.title}"...`);
                     // Calculate progress from 30% to 90%
                     const stepProgress = 30 + Math.round(((i) / curriculum.length) * 60);
                     setProgress(stepProgress);
@@ -92,6 +92,7 @@ function CuratingContent() {
                     // Let's trust the lesson generator but ensure context is stored.
                     generatedLessons.push({
                         ...lessonData,
+                        scenario: topic.description, // Override with the personalized description from curriculum
                         context: topic.context
                     });
                 }
@@ -118,41 +119,115 @@ function CuratingContent() {
                 }, 2000);
             }
         };
-
         generateLessons();
     }, [router, searchParams]);
 
     return (
-        <div className="min-h-screen w-full bg-warm-off-white flex flex-col items-center justify-center p-6 text-center font-display">
-            <div className="relative mb-8">
-                <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping" />
-                <div className="relative bg-white p-6 rounded-full shadow-lg">
-                    <Sparkles className="w-12 h-12 text-primary animate-pulse" />
+        <div className="min-h-screen w-full mudcloth-bg flex flex-col items-center justify-center p-6 text-center font-display relative overflow-hidden">
+            {/* Elegant Background Elements */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                {/* Large soft orbs */}
+                <div className="absolute top-[-10%] left-[-10%] w-[50vh] h-[50vh] bg-primary/5 rounded-full blur-3xl animate-float-slow" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50vh] h-[50vh] bg-sunny-yellow/5 rounded-full blur-3xl animate-float-delayed" />
+            </div>
+
+            <div className="relative z-10 max-w-md w-full flex flex-col items-center">
+                {/* Central Icon Animation */}
+                <div className="relative mb-12">
+                    {/* Ripple Effect */}
+                    <div className="absolute inset-0 bg-primary/10 rounded-full animate-ripple" />
+                    <div className="absolute inset-0 bg-primary/10 rounded-full animate-ripple-delayed" />
+
+                    {/* Main Icon Container */}
+                    <div className="relative bg-white p-8 rounded-full shadow-xl animate-breathe">
+                        <Sparkles className="w-12 h-12 text-primary animate-pulse-subtle" strokeWidth={1.5} />
+                    </div>
                 </div>
+
+                <h1 className="text-3xl md:text-4xl font-bold text-earthy-brown mb-6 tracking-tight">
+                    Curating Content
+                </h1>
+
+                {/* Status Card */}
+                <div className="w-full bg-white/40 backdrop-blur-md border border-white/50 rounded-3xl p-8 shadow-lg mb-8 transition-all duration-500">
+                    <p className="text-lg text-earthy-brown font-medium mb-6 min-h-[1.75rem]">
+                        {status}
+                    </p>
+
+                    {/* Elegant Progress Bar */}
+                    <div className="relative w-full h-2 bg-earthy-brown/10 rounded-full overflow-hidden">
+                        <div
+                            className="absolute top-0 left-0 h-full bg-primary rounded-full transition-all duration-1000 ease-out"
+                            style={{ width: `${progress}%` }}
+                        />
+                        {/* Shimmer overlay on the progress bar */}
+                        <div
+                            className="absolute top-0 left-0 h-full w-full bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                            style={{
+                                transform: `translateX(${progress - 100}%)`,
+                                transition: 'transform 1s linear'
+                            }}
+                        />
+                    </div>
+                    <div className="flex justify-between items-center mt-3 text-xs font-bold tracking-widest uppercase text-earthy-brown/40">
+                        <span>Progress</span>
+                        <span>{progress}%</span>
+                    </div>
+                </div>
+
+                <p className="text-earthy-brown/60 text-sm font-medium animate-fade-in-up">
+                    Crafting your personalized experience...
+                </p>
             </div>
 
-            <h1 className="text-2xl font-bold text-earthy-brown mb-2">
-                Curating your {displayGoal} curriculum...
-            </h1>
-            <p className="text-earthy-brown/60 mb-4">
-                {status}
-            </p>
-
-            {/* Progress Bar */}
-            <div className="w-full max-w-xs bg-sand-beige/50 rounded-full h-2 overflow-hidden">
-                <div
-                    className="h-full bg-primary transition-all duration-500 ease-out"
-                    style={{ width: `${progress}%` }}
-                />
-            </div>
-            <p className="text-sm text-earthy-brown/40 mt-2">{progress}%</p>
+            <style jsx>{`
+                @keyframes float-slow {
+                    0%, 100% { transform: translate(0, 0); }
+                    50% { transform: translate(20px, -20px); }
+                }
+                @keyframes float-delayed {
+                    0%, 100% { transform: translate(0, 0); }
+                    50% { transform: translate(-20px, 20px); }
+                }
+                @keyframes ripple {
+                    0% { transform: scale(1); opacity: 0.4; }
+                    100% { transform: scale(2); opacity: 0; }
+                }
+                @keyframes breathe {
+                    0%, 100% { transform: scale(1); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
+                    50% { transform: scale(1.05); box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
+                }
+                @keyframes pulse-subtle {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.7; }
+                }
+                .animate-float-slow { animation: float-slow 8s ease-in-out infinite; }
+                .animate-float-delayed { animation: float-delayed 10s ease-in-out infinite; }
+                .animate-ripple { animation: ripple 3s cubic-bezier(0, 0.2, 0.8, 1) infinite; }
+                .animate-ripple-delayed { animation: ripple 3s cubic-bezier(0, 0.2, 0.8, 1) infinite 1.5s; }
+                .animate-breathe { animation: breathe 4s ease-in-out infinite; }
+                .animate-pulse-subtle { animation: pulse-subtle 3s ease-in-out infinite; }
+                .animate-fade-in-up { animation: fadeInUp 1s ease-out forwards; }
+                @keyframes fadeInUp {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `}</style>
         </div>
     );
 }
-
 export default function CuratingPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen w-full bg-warm-off-white flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-earthy-brown"></div></div>}>
+        <Suspense fallback={
+            <div className="min-h-screen w-full mudcloth-bg flex flex-col items-center justify-center p-6">
+                <div className="w-64 bg-earthy-brown/10 rounded-full h-2 overflow-hidden">
+                    <div className="h-full bg-primary animate-pulse rounded-full w-full origin-left scale-x-50"></div>
+                </div>
+                <p className="text-earthy-brown/60 text-sm font-medium mt-4 animate-pulse">
+                    Loading...
+                </p>
+            </div>
+        }>
             <CuratingContent />
         </Suspense>
     );

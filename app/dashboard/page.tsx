@@ -83,6 +83,7 @@ function DashboardContent() {
                                 status={status}
                                 image={lesson.headerImage}
                                 description={lesson.scenario}
+                                context={lesson.context}
                                 onClick={() => handleStartLesson(lesson.context)}
                             />
                         );

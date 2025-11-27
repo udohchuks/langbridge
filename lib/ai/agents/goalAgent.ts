@@ -1,13 +1,9 @@
 
-import { getCohereClient, isCohereConfigured } from '../cohereClient';
+import { getGenerativeClient } from '../googleClient';
 
 export const goalAgent = {
     refineGoal: async (userProfile: { name: string; age: string; language: string; level: string; goal: string; contextDetails: string }): Promise<string> => {
-        if (!isCohereConfigured()) {
-            return `Mock Detailed Goal: User wants to learn ${userProfile.language} for ${userProfile.goal} with context: ${userProfile.contextDetails}`;
-        }
-
-        const cohere = getCohereClient();
+        const client = getGenerativeClient();
 
         const prompt = `
         You are an expert language learning consultant.
@@ -29,19 +25,17 @@ export const goalAgent = {
         4. Keep it under 100 words.
 
         OUTPUT:
-        Just the detailed goal description string.
+        Just the detailed goal description string. No JSON, no markdown, just the text.
         `;
 
         try {
-            const response = await cohere.chat({
-                message: "Refine the goal now.",
-                preamble: prompt,
-                model: "c4ai-aya-expanse-32b",
-                temperature: 0.3,
+            const response = await client.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: prompt
             });
-            return response.text;
+            return response.text || `User wants to learn ${userProfile.language} for ${userProfile.goal}.`;
         } catch (error) {
-            console.error("Error refining goal with Cohere:", error);
+            console.error("Error refining goal with Gemini:", error);
             return `User wants to learn ${userProfile.language} for ${userProfile.goal}.`;
         }
     }

@@ -85,7 +85,8 @@ export default function OnboardingPage() {
         const summary = `User ${formData.name} (${formData.age}) wants to learn ${formData.language} for ${goalDescription}. Context: ${details || "None provided"}`;
 
         // Save user profile
-        saveUserProfile({
+        // Save user profile
+        const saved = saveUserProfile({
             name: formData.name,
             age: formData.age,
             language: formData.language,
@@ -95,6 +96,13 @@ export default function OnboardingPage() {
             contextDetails: details,
             summary: summary
         });
+
+        if (!saved) {
+            console.error("Failed to save user profile. Onboarding may not persist.");
+            // Ideally show a toast or alert here, but for now logging is critical.
+            alert("There was an issue saving your profile. Please try again.");
+            return;
+        }
 
         // Navigate to curating page
         router.push(`/curating?context=${encodeURIComponent(context || "")}&details=${encodeURIComponent(details)}&name=${encodeURIComponent(formData.name)}&lang=${encodeURIComponent(formData.language)}`);

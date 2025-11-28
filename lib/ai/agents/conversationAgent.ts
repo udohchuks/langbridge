@@ -19,7 +19,7 @@ export const conversationAgent = {
         try {
             // Run translations in parallel
             const [englishTranslation, targetTranslation] = await Promise.all([
-                googleTranslateClient.translateToEnglish(userInput),
+                googleTranslateClient.translateToEnglish(userInput, targetLanguage),
                 googleTranslateClient.translateText(userInput, targetLanguage)
             ]);
 

@@ -36,7 +36,7 @@ export const googleTranslateClient = {
         }
     },
 
-    translateToEnglish: async (text: string): Promise<string> => {
+    translateToEnglish: async (text: string, sourceLanguageHint?: string): Promise<string> => {
         try {
             // Check cache first
             const cached = translationCache.get(text, 'en');
@@ -44,12 +44,46 @@ export const googleTranslateClient = {
                 return cached;
             }
 
+            // 1. Try Auto-detect
             const res = await translate(text, { to: 'en' });
 
-            // Store in cache
-            translationCache.set(text, 'en', res.text);
+            let finalResult = res.text;
 
-            return res.text;
+            // 2. If detected language is NOT English AND we have a hint that differs
+            if (res.from.language.iso !== 'en' && sourceLanguageHint) {
+                const hintCode = getGoogleLanguageCode(sourceLanguageHint);
+
+                // If the detected language is different from our expected source language
+                if (res.from.language.iso !== hintCode) {
+                    try {
+                        const forcedRes = await translate(text, { to: 'en', from: hintCode });
+
+                        // Heuristic: If forced translation is same as input (failed to translate),
+                        // but auto-detect found something different (likely correct language),
+                        // prefer auto-detect.
+                        // Example: "Bonjour" (Hint: ak) -> Forced: "Bonjour", Auto: "Hello". Use Auto.
+                        // Example: "akwaaba" (Hint: ak) -> Forced: "welcome", Auto: "the egg". Use Forced.
+
+                        const forcedChanged = forcedRes.text.toLowerCase() !== text.toLowerCase();
+                        const autoChanged = res.text.toLowerCase() !== text.toLowerCase();
+
+                        if (forcedChanged) {
+                            finalResult = forcedRes.text;
+                        } else if (autoChanged) {
+                            // Forced didn't work, but Auto did. Revert to Auto result.
+                            finalResult = res.text;
+                        }
+
+                    } catch (e) {
+                        console.warn("Forced translation failed, falling back to auto-detect", e);
+                    }
+                }
+            }
+
+            // Store in cache
+            translationCache.set(text, 'en', finalResult);
+
+            return finalResult;
         } catch (error) {
             console.error(`Translation to English failed for text: "${text}"`, error);
             return text;

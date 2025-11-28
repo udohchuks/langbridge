@@ -164,6 +164,7 @@ function LessonContent() {
     };
 
     const toggleTranslation = (messageId: string) => {
+        console.log("Toggling translation for:", messageId);
         setTranslationVisible((prev) => {
             const newSet = new Set(prev);
             if (newSet.has(messageId)) {
@@ -171,6 +172,7 @@ function LessonContent() {
             } else {
                 newSet.add(messageId);
             }
+            console.log("New translationVisible set:", Array.from(newSet));
             return newSet;
         });
     };
@@ -299,52 +301,55 @@ function LessonContent() {
 
                 {/* Dialogue Area */}
                 <div className="px-4 pt-4 space-y-6 pb-24 sm:pb-4">
-                    {dialogue.map((line) => (
-                        <div
-                            key={line.id}
-                            className={`flex items-end gap-3 ${line.speaker === "learner" ? "justify-end" : "justify-start"}`}
-                        >
-                            {line.speaker === "native" && (
-                                <div
-                                    className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 shrink-0 shadow"
-                                    style={{ backgroundImage: `url("${lesson.characterImage}")` }}
-                                ></div>
-                            )}
-
-                            <div className={`flex flex-col gap-1 ${line.speaker === "learner" ? "items-end" : "items-start"}`}>
+                    {dialogue.map((line) => {
+                        // console.log("Rendering line:", line.id, "UserEnglish:", line.userEnglish, "Translation:", line.translation, "EnglishText:", line.englishText);
+                        return (
+                            <div
+                                key={line.id}
+                                className={`flex items-end gap-3 ${line.speaker === "learner" ? "justify-end" : "justify-start"}`}
+                            >
                                 {line.speaker === "native" && (
-                                    <p className="text-savanna-green/70 text-[13px] font-medium">{lesson.character}</p>
+                                    <div
+                                        className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 shrink-0 shadow"
+                                        style={{ backgroundImage: `url("${lesson.characterImage}")` }}
+                                    ></div>
                                 )}
 
-                                <div
-                                    onClick={() => toggleTranslation(line.id)}
-                                    className={`flex items-center gap-2 max-w-[90%] sm:max-w-[80%] w-fit min-w-[4rem] rounded-xl px-4 py-3 shadow cursor-pointer break-words ${line.speaker === "learner" ? "bg-terracotta-orange text-white" : "bg-white text-savanna-green"
-                                        }`}
-                                >
-                                    <p className="text-base font-normal flex-1">{line.nativeText}</p>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const textToPlay = line.speaker === "learner" ? (line.translation || "") : line.nativeText;
-                                            if (textToPlay) playAudio(textToPlay);
-                                        }}
-                                        className={`shrink-0 ${line.speaker === "learner" ? "text-white/80" : "text-savanna-green/60"}`}
-                                        disabled={playingAudio === (line.speaker === "learner" ? (line.translation || "") : line.nativeText)}
+                                <div className={`flex flex-col gap-1 ${line.speaker === "learner" ? "items-end" : "items-start"}`}>
+                                    {line.speaker === "native" && (
+                                        <p className="text-savanna-green/70 text-[13px] font-medium">{lesson.character}</p>
+                                    )}
+
+                                    <div
+                                        onClick={() => toggleTranslation(line.id)}
+                                        className={`flex items-center gap-2 max-w-[90%] sm:max-w-[80%] w-fit min-w-[4rem] rounded-xl px-4 py-3 shadow cursor-pointer break-words ${line.speaker === "learner" ? "bg-terracotta-orange text-white" : "bg-white text-savanna-green"
+                                            }`}
                                     >
-                                        <span className={`material-symbols-outlined text-xl ${playingAudio === (line.speaker === "learner" ? (line.translation || "") : line.nativeText) ? "animate-pulse" : ""}`}>
-                                            {playingAudio === (line.speaker === "learner" ? (line.translation || "") : line.nativeText) ? "volume_up" : "volume_up"}
-                                        </span>
-                                    </button>
-                                </div>
+                                        <p className="text-base font-normal flex-1">{line.nativeText}</p>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const textToPlay = line.speaker === "learner" ? (line.translation || "") : line.nativeText;
+                                                if (textToPlay) playAudio(textToPlay);
+                                            }}
+                                            className={`shrink-0 ${line.speaker === "learner" ? "text-white/80" : "text-savanna-green/60"}`}
+                                            disabled={playingAudio === (line.speaker === "learner" ? (line.translation || "") : line.nativeText)}
+                                        >
+                                            <span className={`material-symbols-outlined text-xl ${playingAudio === (line.speaker === "learner" ? (line.translation || "") : line.nativeText) ? "animate-pulse" : ""}`}>
+                                                {playingAudio === (line.speaker === "learner" ? (line.translation || "") : line.nativeText) ? "volume_up" : "volume_up"}
+                                            </span>
+                                        </button>
+                                    </div>
 
-                                {translationVisible.has(line.id) && (
-                                    <p className={`text-sm font-medium italic ${line.speaker === "learner" ? "text-savanna-green/80 mr-2" : "text-savanna-green/80 ml-2"}`}>
-                                        {line.userEnglish || line.translation || line.englishText}
-                                    </p>
-                                )}
+                                    {translationVisible.has(line.id) && (
+                                        <p className={`text-sm font-medium italic ${line.speaker === "learner" ? "text-savanna-green/80 mr-2" : "text-savanna-green/80 ml-2"}`}>
+                                            {line.userEnglish || line.translation || line.englishText}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        )
+                    })}
                     {isTyping && (
                         <div className="flex items-end gap-3 justify-start">
                             <div

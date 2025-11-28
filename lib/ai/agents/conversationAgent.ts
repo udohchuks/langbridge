@@ -8,7 +8,7 @@ export const conversationAgent = {
         userInput: string,
         targetLanguage: string,
         context: string
-    ): Promise<{ nativeText: string; englishText: string; userTranslation: string; nextImagePrompt?: string }> => {
+    ): Promise<{ nativeText: string; englishText: string; userTranslation: string; userEnglish: string; nextImagePrompt?: string }> => {
 
         const client = getGenerativeClient();
 
@@ -17,12 +17,14 @@ export const conversationAgent = {
         let userTranslationInTarget = userInput;
 
         try {
-            // Translate to English for AI's understanding
-            inputForAya = await googleTranslateClient.translateToEnglish(userInput);
+            // Run translations in parallel
+            const [englishTranslation, targetTranslation] = await Promise.all([
+                googleTranslateClient.translateToEnglish(userInput),
+                googleTranslateClient.translateText(userInput, targetLanguage)
+            ]);
 
-            // Translate to Target Language for the UI (userTranslation field)
-            // If the user typed in English, this gives the target. If they typed in Target, it cleans it up or keeps it.
-            userTranslationInTarget = await googleTranslateClient.translateText(userInput, targetLanguage);
+            inputForAya = englishTranslation;
+            userTranslationInTarget = targetTranslation;
         } catch (e) {
             console.error("Translation error on input:", e);
         }
@@ -74,6 +76,7 @@ export const conversationAgent = {
                 nativeText: nativeText,
                 englishText: aiResponse.englishResponse,
                 userTranslation: userTranslationInTarget,
+                userEnglish: inputForAya,
                 nextImagePrompt: aiResponse.nextImagePrompt
             };
         } catch (error: any) {
@@ -88,6 +91,7 @@ export const conversationAgent = {
                 nativeText: "(Connection Error)",
                 englishText: "I'm having trouble understanding. (Error)",
                 userTranslation: "...",
+                userEnglish: "...",
             };
         }
     }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { getUserProfile } from "@/lib/userStorage";
 
 
 interface DialogueLine {
@@ -10,6 +11,7 @@ interface DialogueLine {
     nativeText: string;
     englishText: string;
     translation?: string;
+    userEnglish?: string;
 }
 
 interface LessonData {
@@ -57,8 +59,16 @@ function LessonContent() {
                 if (cachedLesson) {
                     currentLesson = cachedLesson;
                 } else {
-                    const userProfile = JSON.parse(localStorage.getItem("userProfile") || "{}");
-                    const targetLanguage = userProfile.language || "Twi";
+                    const userProfile = getUserProfile();
+
+                    // Validate that user has completed onboarding with language preference
+                    if (!userProfile || !userProfile.language) {
+                        console.error("No language preference found. Redirecting to onboarding.");
+                        router.push("/onboarding");
+                        return;
+                    }
+
+                    const targetLanguage = userProfile.language;
                     const userLevel = userProfile.level || "Beginner";
                     const userGoal = userProfile.goal || "General";
 
@@ -82,7 +92,13 @@ function LessonContent() {
                 if (currentLesson) {
                     setLesson(currentLesson);
                     if (currentLesson.initialDialogue && currentLesson.initialDialogue.length > 0) {
-                        const initialAIMessage = currentLesson.initialDialogue[0];
+                        // Ensure all dialogue lines have an ID
+                        const validatedDialogue = currentLesson.initialDialogue.map((line, index) => ({
+                            ...line,
+                            id: line.id || `msg-init-${Date.now()}-${index}`
+                        }));
+
+                        const initialAIMessage = validatedDialogue[0];
                         setDialogue([initialAIMessage]);
                         setChatHistory([{ role: "model", parts: initialAIMessage.nativeText }]);
                     } else {
@@ -125,7 +141,12 @@ function LessonContent() {
     const [isTyping, setIsTyping] = useState(false);
 
     const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+    const messageIdCounter = useRef(0);
 
+    const generateUniqueId = () => {
+        messageIdCounter.current += 1;
+        return `msg-${Date.now()}-${messageIdCounter.current}`;
+    };
 
     const playAudio = (text: string) => {
         if (playingAudio) return; // Prevent overlapping playback
@@ -158,7 +179,7 @@ function LessonContent() {
         if (!message.trim() || !lesson) return;
 
         const userMessage: DialogueLine = {
-            id: Date.now().toString(),
+            id: generateUniqueId(),
             speaker: "learner",
             nativeText: message,
             englishText: message,
@@ -170,8 +191,23 @@ function LessonContent() {
         const newHistory = [...chatHistory, { role: "user" as const, parts: message }];
 
         try {
-            const userProfile = JSON.parse(localStorage.getItem("userProfile") || "{}");
-            const targetLanguage = userProfile.language || "Twi";
+            const userProfile = getUserProfile();
+
+            // Validate that user has language preference
+            if (!userProfile || !userProfile.language) {
+                const errorMessage: DialogueLine = {
+                    id: generateUniqueId(),
+                    speaker: "native",
+                    nativeText: "Please complete your profile setup first.",
+                    englishText: "Please complete your profile setup first.",
+                    translation: "Please complete your profile setup first.",
+                };
+                setDialogue((prev) => [...prev, errorMessage]);
+                setIsTyping(false);
+                return;
+            }
+
+            const targetLanguage = userProfile.language;
 
             const response = await fetch("/api/chat", {
                 method: "POST",
@@ -189,7 +225,7 @@ function LessonContent() {
             const data = await response.json();
 
             const aiMessage: DialogueLine = {
-                id: (Date.now() + 1).toString(),
+                id: generateUniqueId(),
                 speaker: "native",
                 nativeText: data.nativeText,
                 englishText: data.englishText,
@@ -303,7 +339,7 @@ function LessonContent() {
 
                                 {translationVisible.has(line.id) && (
                                     <p className={`text-sm font-medium italic ${line.speaker === "learner" ? "text-savanna-green/80 mr-2" : "text-savanna-green/80 ml-2"}`}>
-                                        {line.translation || line.englishText}
+                                        {line.userEnglish || line.translation || line.englishText}
                                     </p>
                                 )}
                             </div>

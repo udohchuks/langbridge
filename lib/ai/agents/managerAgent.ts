@@ -10,6 +10,7 @@ export interface LessonPlan {
     characterDescription: string;
     scenario: string;
     initialDialogue: {
+        id: string;
         speaker: "native" | "learner";
         nativeText: string;
         englishText: string;
@@ -18,6 +19,7 @@ export interface LessonPlan {
         title: string;
         pronunciation: string;
         description: string;
+        // ... existing fields
     };
     imagePrompts: {
         header: string;
@@ -32,7 +34,7 @@ const getMockLesson = (context: string, userGoal: string = "General"): LessonPla
     characterDescription: "A friendly middle-aged woman wearing a colorful Kente cloth.",
     scenario: `Practice ${context} conversation for your ${userGoal} goals.`,
     initialDialogue: [
-        { speaker: "native", nativeText: "Ete sen?", englishText: "How are you?" },
+        { id: "mock-1", speaker: "native", nativeText: "Ete sen?", englishText: "How are you?" },
     ],
     culturalNote: {
         title: "Mepaakyew",
@@ -114,9 +116,10 @@ export const managerAgent = {
                 const rawPlan = JSON.parse(text);
 
                 // Translate the dialogue to target language
-                const translatedDialogue = await Promise.all(rawPlan.initialDialogue.map(async (line: { speaker: "native" | "learner"; englishText: string }) => {
+                const translatedDialogue = await Promise.all(rawPlan.initialDialogue.map(async (line: { speaker: "native" | "learner"; englishText: string }, index: number) => {
                     const nativeText = await googleTranslateClient.translateText(line.englishText, targetLanguage);
                     return {
+                        id: `msg-${Date.now()}-${index}`,
                         speaker: line.speaker,
                         nativeText: nativeText,
                         englishText: line.englishText

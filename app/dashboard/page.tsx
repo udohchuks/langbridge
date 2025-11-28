@@ -5,6 +5,7 @@ import { Settings, User } from "lucide-react";
 import { Timeline } from "@/components/dashboard/Timeline";
 import { LessonCard } from "@/components/dashboard/LessonCard";
 import { getLessons, LessonData } from "@/lib/lessonStorage";
+import { getUserProfile } from "@/lib/userStorage";
 import { useEffect, useState } from "react";
 
 import { Suspense } from "react";
@@ -24,7 +25,7 @@ function DashboardContent() {
                 setLoading(false);
             } else {
                 // If no lessons, redirect to curating to generate them
-                const userProfile = localStorage.getItem("userProfile");
+                const userProfile = getUserProfile();
                 if (userProfile) {
                     router.push("/curating");
                 } else {

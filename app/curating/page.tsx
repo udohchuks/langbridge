@@ -26,7 +26,14 @@ function CuratingContent() {
                     return;
                 }
 
-                const targetLanguage = userProfile.language || "Twi";
+                // Validate that user has language preference
+                if (!userProfile.language) {
+                    console.error("No language preference found. Redirecting to onboarding.");
+                    router.push("/onboarding");
+                    return;
+                }
+
+                const targetLanguage = userProfile.language;
                 const userLevel = userProfile.level || "Beginner";
 
                 // 1. Refine Goal

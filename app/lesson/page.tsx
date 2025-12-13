@@ -109,19 +109,8 @@ function LessonContent() {
                         setChatHistory([]);
                     }
 
-                    // Pre-load images before showing content
-                    const imagesToLoad = [];
-                    if (currentLesson.headerImage) imagesToLoad.push(currentLesson.headerImage);
-                    if (currentLesson.characterImage) imagesToLoad.push(currentLesson.characterImage);
-
-                    await Promise.all(imagesToLoad.map(src => {
-                        return new Promise<void>((resolve) => {
-                            const img = new Image();
-                            img.onload = () => resolve();
-                            img.onerror = () => resolve();
-                            img.src = src;
-                        });
-                    }));
+                    // Images will load asynchronously by the browser
+                    setLoading(false);
 
                     setLoading(false);
                 }

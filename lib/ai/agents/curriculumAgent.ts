@@ -1,67 +1,53 @@
-
-import { getGenerativeClient } from '../googleClient';
+import { CURRICULUM_TEMPLATES, LESSON_TEMPLATES, LessonTemplate } from '@/lib/logic/templates';
+import { personalizeText, inferCountryFromLanguage, inferCityFromLanguage } from '@/lib/logic/personalization';
 
 export interface LessonTopic {
     context: string;
     title: string;
     description: string;
+    templateId?: string; // Track which template maps to this topic
 }
 
 export const curriculumAgent = {
     generateCurriculum: async (userProfile: any, detailedGoal: string): Promise<LessonTopic[]> => {
+        // 1. Determine the best curriculum match
+        // Simple logic for now: Default to "travel" unless "business" is mentioned
+        const goalLower = (userProfile.goal || "").toLowerCase() + " " + detailedGoal.toLowerCase();
+        let templateId = "travel";
+        if (goalLower.includes("business") || goalLower.includes("work")) {
+            templateId = "business";
+        }
 
-        const client = getGenerativeClient();
+        const curriculumTemplate = CURRICULUM_TEMPLATES[templateId] || CURRICULUM_TEMPLATES["travel"];
 
-        const prompt = `
-        You are an expert curriculum designer creating a personalized language learning path.
-        
-        USER PROFILE:
-        - Name: ${userProfile.name}
-        - Age: ${userProfile.age}
-        - Target Language: ${userProfile.language}
-        - Proficiency Level: ${userProfile.level}
-        
-        DETAILED GOAL:
-        "${detailedGoal}"
+        // 2. Prepare context for personalization
+        const context = {
+            name: userProfile.name || "Traveller",
+            language: userProfile.language || "Local Language",
+            country: inferCountryFromLanguage(userProfile.language || ""),
+            city: inferCityFromLanguage(userProfile.language || ""),
+        };
 
-        INSTRUCTIONS:
-        1. Create exactly 3 lesson topics that progressively build skills relevant to the goal.
-        2. "context" should be a simple keyword (e.g., "airport", "meeting", "family_dinner").
-        3. "title" should be a SIMPLE, COMMON English title (1-3 words max). E.g., "Greetings", "At the Market", "Family Dinner".
-        4. "description" should PLACE ${userProfile.name} IN THE LEARNING CONTEXT (max 15 words). Set the scene of where they are and what they're about to learn. Use present tense.
-           Examples:
-           - If learning greetings: "${userProfile.name} visits grandma's house to practice warm ${userProfile.language} greetings"
-           - If learning shopping: "${userProfile.name} is at the local market ready to buy fresh vegetables"
-           - If making friends: "${userProfile.name} meets new classmates eager to introduce themselves"
+        // 3. Map lessons to LessonTopics
+        const topics: LessonTopic[] = curriculumTemplate.lessons.map(lessonId => {
+            const lessonTemplate = LESSON_TEMPLATES[lessonId];
+            if (!lessonTemplate) return null;
 
-        OUTPUT FORMAT (JSON ARRAY ONLY):
-        [
-            {
-                "context": "keyword",
-                "title": "Lesson Title",
-                "description": "Scene-setting description placing user in context"
-            },
-            ...
-        ]
-        Return ONLY the JSON array. No markdown.
-        `;
+            return {
+                context: lessonTemplate.scenario,
+                title: lessonTemplate.title,
+                description: personalizeText(lessonTemplate.description, context),
+                templateId: lessonId
+            } as LessonTopic;
+        }).filter((t): t is LessonTopic => t !== null);
 
-        try {
-            const response = await client.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: prompt
-            });
-            const text = response.text || "";
-
-            const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
-            return JSON.parse(jsonStr) as LessonTopic[];
-        } catch (error) {
-            console.error("Error generating curriculum with Gemini:", error);
+        // Fallback if no lessons found (shouldn't happen with valid templates)
+        if (topics.length === 0) {
             return [
-                { context: "greeting", title: "Introduction", description: `${userProfile.name} meets someone new and practices basic greetings` },
-                { context: "general", title: "General Conversation", description: `${userProfile.name} chats with a friend about everyday topics` },
-                { context: "vocabulary", title: "Key Vocabulary", description: `${userProfile.name} explores essential words for daily life` }
+                { context: "greeting", title: "Introduction", description: `${context.name} learns basic greetings in ${context.country}`, templateId: "travel_1_greetings" }
             ];
         }
+
+        return topics;
     }
 };

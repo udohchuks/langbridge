@@ -3,6 +3,15 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getUserProfile } from "@/lib/userStorage";
+import { StudyView } from "@/components/lesson/StudyView";
+import { LessonData } from "@/lib/lessonStorage";
+import { MicWidget } from "@/components/lesson/MicWidget";
+import { PronunciationFeedback } from "@/components/lesson/PronunciationFeedback";
+import { DialectSwitcher } from "@/components/lesson/DialectSwitcher";
+import { ProgressIndicators } from "@/components/lesson/ProgressIndicators";
+import { SpeechEvaluationResult } from "@/lib/ai/agents/pronunciationAgent";
+import { formatTitle } from "@/lib/format";
+import { getUserProgress, getLessonProgress, calculateAccuracy } from "@/lib/progressStorage";
 
 
 interface DialogueLine {
@@ -14,21 +23,7 @@ interface DialogueLine {
     userEnglish?: string;
 }
 
-interface LessonData {
-    title: string;
-    location: string;
-    character: string;
-    characterDescription: string;
-    scenario: string;
-    headerImage: string;
-    characterImage: string;
-    initialDialogue: DialogueLine[];
-    culturalNote: {
-        title: string;
-        pronunciation: string;
-        description: string;
-    };
-}
+
 
 function LessonContent() {
     const searchParams = useSearchParams();
@@ -43,6 +38,13 @@ function LessonContent() {
     const [inputMode, setInputMode] = useState<"mic" | "text">("text");
     const [textInput, setTextInput] = useState("");
     const [chatHistory, setChatHistory] = useState<{ role: "user" | "model"; parts: string }[]>([]);
+
+    const [viewMode, setViewMode] = useState<"study" | "practice">("study");
+
+    const [speechResult, setSpeechResult] = useState<SpeechEvaluationResult | null>(null);
+    const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+    const [currentDialect, setCurrentDialect] = useState("default");
+    const [userLanguage, setUserLanguage] = useState("Yoruba");
 
     const dialogueRef = useRef<HTMLDivElement>(null);
 
@@ -69,6 +71,7 @@ function LessonContent() {
                     }
 
                     const targetLanguage = userProfile.language;
+                    setUserLanguage(targetLanguage);
                     const userLevel = userProfile.level || "Beginner";
                     const userGoal = userProfile.goal || "General";
 
@@ -148,19 +151,108 @@ function LessonContent() {
         return `msg-${Date.now()}-${messageIdCounter.current}`;
     };
 
-    const playAudio = (text: string) => {
+    const playAudio = async (text: string) => {
         if (playingAudio) return; // Prevent overlapping playback
-
         setPlayingAudio(text);
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        // Optional: Try to match voice to language if possible, but browser support for African languages is limited.
-        // We rely on the browser's default behavior.
+        try {
+            const userProfile = getUserProfile();
+            const language = userProfile?.language || "English"; // Default or detect
 
+            const response = await fetch("/api/tts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text, language, dialect: currentDialect }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.audioData) {
+                    // Assuming audioData is base64
+                    const audio = new Audio(`data:audio/mp3;base64,${data.audioData}`);
+                    audio.onended = () => setPlayingAudio(null);
+                    audio.onerror = () => setPlayingAudio(null);
+                    await audio.play();
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error("TTS Error:", error);
+        }
+
+        // Fallback to browser TTS if API fails or no audio returned
+        const utterance = new SpeechSynthesisUtterance(text);
         utterance.onend = () => setPlayingAudio(null);
         utterance.onerror = () => setPlayingAudio(null);
-
         window.speechSynthesis.speak(utterance);
+    };
+
+    // Helper function to convert Blob to base64
+    const blobToBase64 = (blob: Blob): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const result = reader.result as string;
+                const base64 = result.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    };
+
+    const handleSpeechEval = async (audioBlob: Blob) => {
+        setIsProcessingAudio(true);
+        setSpeechResult(null);
+        try {
+            const base64Audio = await blobToBase64(audioBlob);
+
+            // Use the last native message as the expected text for pronunciation practice
+            const lastNativeLine = [...dialogue].reverse().find(l => l.speaker === "native");
+            const expectedText = lastNativeLine ? lastNativeLine.nativeText : "Hello";
+
+            const userProfile = getUserProfile();
+
+            // Determine the correct MIME type
+            const mimeType = audioBlob.type || "audio/webm";
+
+            const response = await fetch("/api/speech-eval", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    audioBase64: base64Audio,
+                    expectedText: expectedText,
+                    language: userProfile?.language || "African Language",
+                    mimeType: mimeType,
+                    dialect: currentDialect
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                setSpeechResult(result);
+            } else {
+                const errorData = await response.json().catch(() => ({ error: "Speech evaluation failed" }));
+                setSpeechResult({
+                    transcript: "",
+                    phonemes: "",
+                    accuracy: 0,
+                    issues: [],
+                    error: errorData.error || "Speech evaluation failed. Please try again."
+                });
+            }
+        } catch (error) {
+            console.error("Speech Eval Error:", error);
+            setSpeechResult({
+                transcript: "",
+                phonemes: "",
+                accuracy: 0,
+                issues: [],
+                error: "Could not process your speech. Please check your microphone and try again."
+            });
+        } finally {
+            setIsProcessingAudio(false);
+        }
     };
 
     const toggleTranslation = (messageId: string) => {
@@ -263,17 +355,55 @@ function LessonContent() {
 
     if (!lesson) return null;
 
+    if (viewMode === "study") {
+        return (
+            <div className="relative h-[100dvh] w-full max-w-lg mx-auto bg-sand-beige">
+                <div className="absolute top-0 left-0 right-0 z-10 flex items-center bg-transparent p-4 justify-between pointer-events-none">
+                    <button
+                        onClick={() => router.back()}
+                        className="flex size-12 items-center justify-center text-earthy-brown bg-white/80 backdrop-blur rounded-full hover:bg-white shadow-sm pointer-events-auto"
+                    >
+                        <span className="material-symbols-outlined">arrow_back</span>
+                    </button>
+                </div>
+                <StudyView
+                    title={lesson.title}
+                    goal={lesson.scenario}
+                    vocabulary={lesson.vocabulary || []}
+                    keyPhrases={lesson.keyPhrases || []}
+                    culturalNote={lesson.culturalNote}
+                    onStartPractice={() => setViewMode("practice")}
+                    language={userLanguage}
+                    dialect={currentDialect}
+                    context={context}
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="relative flex h-[100dvh] w-full max-w-lg mx-auto flex-col bg-sand-beige overflow-hidden">
             {/* Top Nav Bar */}
             <div className="absolute top-0 left-0 right-0 z-10 flex items-center bg-transparent p-4 justify-between">
                 <button
-                    onClick={() => router.back()}
+                    onClick={() => setViewMode("study")}
                     className="flex size-12 items-center justify-center text-white bg-black/20 rounded-full hover:bg-black/30"
                 >
                     <span className="material-symbols-outlined">arrow_back</span>
                 </button>
-
+                <ProgressIndicators
+                    xp={getUserProgress().totalXP}
+                    streak={getUserProgress().currentStreak}
+                    accuracy={calculateAccuracy(getLessonProgress(context))}
+                    compact={true}
+                />
+                {lesson && (
+                    <DialectSwitcher
+                        language={userLanguage}
+                        currentDialect={currentDialect}
+                        onDialectChange={setCurrentDialect}
+                    />
+                )}
             </div>
 
             {/* Scrollable Content Wrapper */}
@@ -377,52 +507,72 @@ function LessonContent() {
                     <p className="text-xs text-savanna-green/60 italic">Tap a message to see translation</p>
                 </div>
 
-                <div className="flex items-center justify-between px-4 sm:px-6 py-4 gap-2">
-                    <button
-                        onClick={() => setShowCulturalNote(true)}
-                        className="flex items-center justify-center size-12 sm:size-14 rounded-full bg-white/80 text-savanna-green shadow-md shrink-0"
-                    >
-                        <span className="material-symbols-outlined text-2xl sm:text-3xl">lightbulb</span>
-                    </button>
-
-                    {inputMode === "text" ? (
-                        <div className="flex-1 mx-2 sm:mx-4 flex gap-2 min-w-0">
-                            <input
-                                type="text"
-                                value={textInput}
-                                onChange={(e) => setTextInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") handleSendMessage(textInput);
-                                }}
-                                placeholder="Type your response..."
-                                className="flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-full bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-terracotta-orange text-sm sm:text-base min-w-0"
-                            />
-                            <button
-                                onClick={() => handleSendMessage(textInput)}
-                                className="flex items-center justify-center size-12 sm:size-14 rounded-full bg-terracotta-orange text-white shadow-lg shrink-0"
-                            >
-                                <span className="material-symbols-outlined text-2xl sm:text-3xl">send</span>
-                            </button>
+                <div className="flex flex-col gap-2 p-4">
+                    {/* Pronunciation Feedback Area */}
+                    {speechResult && (
+                        <div className="mb-4">
+                            <PronunciationFeedback result={speechResult} />
+                            <div className="flex justify-end mt-2">
+                                <button
+                                    onClick={() => setSpeechResult(null)}
+                                    className="text-xs text-gray-400 hover:text-gray-600"
+                                >
+                                    Dismiss
+                                </button>
+                            </div>
                         </div>
-                    ) : (
-                        <button className="relative flex items-center justify-center size-20 sm:size-24 rounded-full bg-terracotta-orange text-white shadow-lg shrink-0">
-                            <span className="material-symbols-outlined text-5xl sm:text-6xl">mic</span>
-                        </button>
                     )}
 
-                    <button
-                        onClick={() => setInputMode(inputMode === "mic" ? "text" : "mic")}
-                        className="flex items-center justify-center size-12 sm:size-14 rounded-full bg-white/80 text-savanna-green shadow-md shrink-0"
-                    >
-                        <span className="material-symbols-outlined text-2xl sm:text-3xl">{inputMode === "mic" ? "keyboard" : "mic"}</span>
-                    </button>
+                    <div className="flex items-center justify-between gap-2">
+                        <button
+                            onClick={() => setShowCulturalNote(true)}
+                            className="flex items-center justify-center size-12 sm:size-14 rounded-full bg-white/80 text-savanna-green shadow-md shrink-0"
+                        >
+                            <span className="material-symbols-outlined text-2xl sm:text-3xl">lightbulb</span>
+                        </button>
+
+                        {inputMode === "text" ? (
+                            <div className="flex-1 mx-2 sm:mx-4 flex gap-2 min-w-0">
+                                <input
+                                    type="text"
+                                    value={textInput}
+                                    onChange={(e) => setTextInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") handleSendMessage(textInput);
+                                    }}
+                                    placeholder="Type your response..."
+                                    className="flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-full bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-terracotta-orange text-sm sm:text-base min-w-0"
+                                />
+                                <button
+                                    onClick={() => handleSendMessage(textInput)}
+                                    className="flex items-center justify-center size-12 sm:size-14 rounded-full bg-terracotta-orange text-white shadow-lg shrink-0"
+                                >
+                                    <span className="material-symbols-outlined text-2xl sm:text-3xl">send</span>
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex-1 flex justify-center">
+                                <MicWidget
+                                    onRecordingComplete={handleSpeechEval}
+                                    isProcessing={isProcessingAudio}
+                                />
+                            </div>
+                        )}
+
+                        <button
+                            onClick={() => setInputMode(inputMode === "mic" ? "text" : "mic")}
+                            className="flex items-center justify-center size-12 sm:size-14 rounded-full bg-white/80 text-savanna-green shadow-md shrink-0"
+                        >
+                            <span className="material-symbols-outlined text-2xl sm:text-3xl">{inputMode === "mic" ? "keyboard" : "mic"}</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* Cultural Note Overlay */}
                 {showCulturalNote && (
                     <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-lg p-6 flex flex-col gap-4 z-20">
                         <div className="text-center">
-                            <h2 className="text-3xl font-bold text-savanna-green">{lesson.culturalNote.title}</h2>
+                            <h2 className="text-3xl font-bold text-savanna-green">{formatTitle(lesson.culturalNote.title)}</h2>
                             <p className="text-lg text-savanna-green/70">{lesson.culturalNote.pronunciation}</p>
                         </div>
                         <div className="text-center bg-sand-beige/60 p-3 rounded">

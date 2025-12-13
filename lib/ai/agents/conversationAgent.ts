@@ -54,18 +54,18 @@ export const conversationAgent = {
         }));
 
         try {
-            const response = await client.models.generateContent({
-                model: "gemini-2.5-flash",
+            const result = await client.models.generateContent({
+                model: "gemini-3-pro-preview",
                 contents: [
-                    ...chatHistory,
-                    {
-                        role: "user",
-                        parts: [{ text: systemPrompt }]
-                    }
-                ]
+                    { role: "user", parts: [{ text: systemPrompt }] },
+                    ...history.map(msg => ({
+                        role: msg.role === "user" ? "user" : "model",
+                        parts: [{ text: msg.parts }]
+                    })),
+                    { role: "user", parts: [{ text: inputForAya }] } // Assuming 'message' refers to the user's input, which is 'inputForAya' here.
+                ],
             });
-
-            const text = response.text || "";
+            const text = result.text || ""; // Changed from 'response.text' to 'result.text'
             const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
             const aiResponse = JSON.parse(jsonStr);
 

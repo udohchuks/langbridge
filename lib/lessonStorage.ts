@@ -19,7 +19,17 @@ export interface LessonData {
         pronunciation: string;
         description: string;
     };
-    context: string; // e.g., "market", "greeting", "family"
+    vocabulary: {
+        native: string;
+        english: string;
+        pronunciation: string;
+    }[];
+    keyPhrases: {
+        native: string;
+        english: string;
+        pronunciation: string;
+    }[];
+    context?: string; // Optional: legacy or derived
 }
 
 export interface LessonCollection {

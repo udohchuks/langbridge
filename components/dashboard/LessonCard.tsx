@@ -2,6 +2,7 @@
 
 import { Lock, Check } from "lucide-react";
 import { useState } from "react";
+import { formatTitle } from "@/lib/format";
 
 interface LessonCardProps {
     title: string;
@@ -24,37 +25,12 @@ export const LessonCard = ({ title, status, image, description, context, onClick
     // Fallback image
     const fallbackImage = "/placeholder-lesson.svg";
 
-    // Helper to clean markdown artifacts and unwanted prefixes
-    const cleanText = (text: string) => {
-        if (!text) return "";
-        let cleaned = text.replace(/[*_]/g, "").trim();
-
-        // Remove "Practice" prefix if present
-        cleaned = cleaned.replace(/^Practice\s+/i, "");
-
-        // Remove everything before the first colon (including the colon) if present
-        // This handles "Detailed Learning Goal: ..." -> " ..."
-        if (cleaned.includes(":")) {
-            cleaned = cleaned.split(":").slice(1).join(":").trim();
-        }
-
-        // Capitalize first letter
-        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-    };
-
-    // Helper to format context (e.g. "first_meeting" -> "First Meeting")
-    const formatContext = (ctx: string) => {
-        return ctx.split('_')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
-    };
-
-    let displayTitle = cleanText(title);
-    const displayDescription = cleanText(description || "");
+    let displayTitle = formatTitle(title);
+    const displayDescription = formatTitle(description || "");
 
     // Fallback: Use formatted context if title is too long or malformed
     if ((displayTitle.length > 30 || !displayTitle) && context) {
-        displayTitle = formatContext(context);
+        displayTitle = formatTitle(context);
     } else if (displayTitle.length > 50) {
         displayTitle = displayTitle.substring(0, 47) + "...";
     }

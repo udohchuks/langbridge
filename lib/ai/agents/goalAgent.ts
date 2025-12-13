@@ -29,11 +29,11 @@ export const goalAgent = {
         `;
 
         try {
-            const response = await client.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: prompt
+            const result = await client.models.generateContent({
+                model: "gemini-3-pro-preview",
+                contents: prompt,
             });
-            return response.text || `User wants to learn ${userProfile.language} for ${userProfile.goal}.`;
+            return result.text || `User wants to learn ${userProfile.language} for ${userProfile.goal}.`;
         } catch (error) {
             console.error("Error refining goal with Gemini:", error);
             return `User wants to learn ${userProfile.language} for ${userProfile.goal}.`;

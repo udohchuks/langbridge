@@ -116,6 +116,28 @@ export default function OnboardingPage() {
 
     const progressPercentage = (currentStep / totalSteps) * 100;
 
+    const handleSkip = () => {
+        // Construct a profile with available data and defaults
+        const profile = {
+            name: formData.name,
+            age: formData.age,
+            language: formData.language,
+            level: formData.level,
+            goal: formData.goal || "fun", // Default to fun if skipping
+            customGoal: formData.customGoal,
+            contextDetails: "",
+            summary: `User ${formData.name} (${formData.age}) wants to learn ${formData.language}. (Skipped goal selection)`
+        };
+
+        const saved = saveUserProfile(profile);
+
+        if (!saved) {
+            console.error("Failed to save user profile on skip.");
+        }
+
+        router.push("/lesson");
+    };
+
     return (
         <div className="relative flex h-[100dvh] w-full flex-col group/design-root overflow-hidden mudcloth-bg font-display">
             <main className="flex flex-1 flex-col p-6 max-w-md mx-auto w-full h-full z-10">
@@ -235,7 +257,7 @@ export default function OnboardingPage() {
                                     >
                                         Continue
                                     </Button>
-                                    <Button variant="ghost" onClick={() => router.push("/lesson")} className="text-earthy-brown/60 hover:text-earthy-brown">
+                                    <Button variant="ghost" onClick={handleSkip} className="text-earthy-brown/60 hover:text-earthy-brown">
                                         Skip for now
                                     </Button>
                                 </div>

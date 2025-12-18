@@ -170,7 +170,7 @@ export default function OnboardingPage() {
                     </div>
 
                     {/* Step Content */}
-                    <div className="flex-1 flex flex-col justify-start pt-8 min-h-0 overflow-hidden">
+                    <div className="flex-1 flex flex-col justify-start pt-8 min-h-0 overflow-y-auto scrollbar-hide">
                         {currentStep === 1 && (
                             <NameStep onNext={handleNameSubmit} initialValue={formData.name} />
                         )}
@@ -201,7 +201,7 @@ export default function OnboardingPage() {
                                             <div
                                                 key={goal.id}
                                                 onClick={() => handleGoalSelect(goal.id)}
-                                                className={`flex flex-1 flex-col gap-3 rounded-2xl border-2 bg-white dark:bg-white/5 p-4 items-center justify-center text-center cursor-pointer hover:border-primary/50 hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-sm ${formData.goal === goal.id
+                                                className={`flex flex-1 flex-col gap-3 rounded-2xl border-2 bg-[#FAF8F1] dark:bg-white/5 p-4 items-center justify-center text-center cursor-pointer hover:border-primary/50 hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-sm ${formData.goal === goal.id
                                                     ? "border-primary ring-2 ring-primary/20 bg-primary/5"
                                                     : "border-transparent"
                                                     }`}
@@ -217,7 +217,7 @@ export default function OnboardingPage() {
 
                                         <div
                                             onClick={() => handleGoalSelect("custom")}
-                                            className={`col-span-2 flex flex-1 flex-col gap-3 rounded-2xl border-2 bg-white dark:bg-white/5 p-4 items-center justify-center text-center cursor-pointer hover:border-primary/50 hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-sm ${formData.goal === "custom"
+                                            className={`col-span-2 flex flex-1 flex-col gap-3 rounded-2xl border-2 bg-[#FAF8F1] dark:bg-white/5 p-4 items-center justify-center text-center cursor-pointer hover:border-primary/50 hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-sm ${formData.goal === "custom"
                                                 ? "border-primary ring-2 ring-primary/20 bg-primary/5"
                                                 : "border-transparent"
                                                 }`}

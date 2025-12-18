@@ -167,13 +167,8 @@ function LessonContent() {
             }
         } catch (error) {
             console.error("TTS Error:", error);
+            setPlayingAudio(null);
         }
-
-        // Fallback to browser TTS if API fails or no audio returned
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.onend = () => setPlayingAudio(null);
-        utterance.onerror = () => setPlayingAudio(null);
-        window.speechSynthesis.speak(utterance);
     };
 
     // Helper function to convert Blob to base64

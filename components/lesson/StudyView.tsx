@@ -99,12 +99,8 @@ export function StudyView({
             }
         } catch (error) {
             console.error("TTS Error:", error);
+            setPlayingAudio(null);
         }
-
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.onend = () => setPlayingAudio(null);
-        utterance.onerror = () => setPlayingAudio(null);
-        window.speechSynthesis.speak(utterance);
     };
 
     const handleMarkKnown = (index: number) => {
